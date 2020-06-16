@@ -1,8 +1,9 @@
-package boot
+package ops
 
 import (
 	"fmt"
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
+	"github.com/dfuse-io/eosio-boot/snapshot"
 	"github.com/dfuse-io/eosio-boot/unregd"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/token"
@@ -10,25 +11,25 @@ import (
 )
 
 func init() {
-	eosboot.Register("snapshot.load_unregistered", &OpInjectUnregdSnapshot{})
+	Register("snapshot.load_unregistered", &OpInjectUnregdSnapshot{})
 }
 
 type OpInjectUnregdSnapshot struct {
 	TestnetTruncateSnapshot int `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
-func (op *OpInjectUnregdSnapshot) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
-	snapshotFile, err := b.GetContentsCacheRef("snapshot_unregistered.csv")
+func (op *OpInjectUnregdSnapshot) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+	snapshotFile, err := c.GetContentsCacheRef("snapshot_unregistered.csv")
 	if err != nil {
 		return nil, err
 	}
 
-	rawSnapshot, err := b.ReadFromCache(snapshotFile)
+	rawSnapshot, err := c.ReadFromCache(snapshotFile)
 	if err != nil {
 		return nil, fmt.Errorf("reading snapshot file: %s", err)
 	}
 
-	snapshotData, err := eosboot.NewUnregdSnapshot(rawSnapshot)
+	snapshotData, err := snapshot.NewUnregd(rawSnapshot)
 	if err != nil {
 		return nil, fmt.Errorf("loading snapshot csv: %s", err)
 	}

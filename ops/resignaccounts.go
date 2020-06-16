@@ -1,13 +1,13 @@
-package boot
+package ops
 
 import (
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/system"
 )
 
 func init() {
-	eosboot.Register("system.resign_accounts", &OpResignAccounts{})
+	Register("system.resign_accounts", &OpResignAccounts{})
 }
 
 
@@ -16,7 +16,7 @@ type OpResignAccounts struct {
 	TestnetKeepAccounts bool `json:"TESTNET_KEEP_ACCOUNTS"`
 }
 
-func (op *OpResignAccounts) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
+func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
 	if op.TestnetKeepAccounts {
 		zlog.Debug("keeping system accounts around, for testing purposes.")
 		return

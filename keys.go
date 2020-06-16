@@ -31,16 +31,6 @@ func (b *Boot) setKeys() error {
 }
 
 func (b *Boot) attachKeysOnTargetNode(ctx context.Context) error {
-	//// Don't get `get_required_keys` from the blockchain, this adds
-	//// latency.. and we KNOW the key you're going to ask :) It's the
-	//// only key we're going to sign with anyway..
-	//b.targetNetAPI.SetCustomGetRequiredKeys(func(ctx context.Context, tx *eos.Transaction) (out []ecc.PublicKey, err error) {
-	//	for _, k := range b.keyBag.Keys {
-	//		out = append(out, k.PublicKey())
-	//	}
-	//	return out, nil
-	//})
-
 	// Store keys in wallet, to sign `SetCode` and friends..
 	b.targetNetAPI.SetSigner(b.keyBag)
 	return nil
@@ -55,4 +45,12 @@ func (b *Boot) parseBootseqKeys() error {
 		b.bootseqKeys[label] = privKey
 	}
 	return nil
+}
+
+
+func (b *Boot) GetBootseqKey(label string) (*ecc.PrivateKey, error) {
+	if _, found := b.bootseqKeys[label]; found {
+		return b.bootseqKeys[label], nil
+	}
+	return nil, fmt.Errorf("bootseq does not contain key with label %q", label)
 }

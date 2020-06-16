@@ -1,14 +1,14 @@
-package boot
+package ops
 
 import (
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/token"
 )
 
 
 func init() {
-	eosboot.Register("token.issue", &OpIssueToken{})
+	Register("token.issue", &OpIssueToken{})
 }
 
 
@@ -18,7 +18,7 @@ type OpIssueToken struct {
 	Memo    string
 }
 
-func (op *OpIssueToken) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
+func (op *OpIssueToken) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
 	act := token.NewIssue(op.Account, op.Amount, op.Memo)
 	return append(out, act), nil
 }

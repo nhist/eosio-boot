@@ -1,4 +1,4 @@
-package boot
+package content
 
 import (
 	"crypto/sha256"
@@ -16,21 +16,51 @@ import (
 
 	"github.com/abourget/llerrgroup"
 )
+type ContentRef struct {
+	Name string `json:"name"`
+	URL  string `json:"url"`
+	Hash string `json:"hash"`
+}
 
-func (b *Boot) downloadReferences() error {
-	if err := b.ensureCacheExists(); err != nil {
+type Manager struct {
+	cachePath string
+}
+
+func NewManager(cachePath string) *Manager {
+	return &Manager{
+		cachePath: cachePath,
+	}
+}
+
+
+func (c *Manager) ensureCacheExists() error {
+	return os.MkdirAll(c.cachePath, 0777)
+}
+
+func (c *Manager) isInCache(ref string) bool {
+	fileName := filepath.Join(c.cachePath, replaceAllWeirdities(ref))
+
+	if _, err := os.Stat(fileName); err == nil {
+		return true
+	}
+	return false
+}
+
+
+func (c *Manager) Download(contentRefs []*ContentRef) error {
+	if err := c.ensureCacheExists(); err != nil {
 		return fmt.Errorf("error creating cache path: %s", err)
 	}
 
 	eg := llerrgroup.New(10)
-	for _, contentRef := range b.bootSequence.Contents {
+	for _, contentRef := range contentRefs {
 		if eg.Stop() {
 			continue
 		}
 
 		contentRef := contentRef
 		eg.Go(func() error {
-			if err := b.DownloadURL(contentRef.URL, contentRef.Hash); err != nil {
+			if err := c.downloadURL(contentRef.URL, contentRef.Hash); err != nil {
 				return fmt.Errorf("content %q: %s", contentRef.Name, err)
 			}
 			return nil
@@ -43,16 +73,12 @@ func (b *Boot) downloadReferences() error {
 	return nil
 }
 
-func (b *Boot) ensureCacheExists() error {
-	return os.MkdirAll(b.cachePath, 0777)
-}
-
-func (b *Boot) DownloadURL(ref string, hash string) error {
-	if hash != "" && b.isInCache(ref) {
+func (c *Manager) downloadURL(ref string, hash string) error {
+	if hash != "" && c.isInCache(ref) {
 		return nil
 	}
 
-	cnt, err := b.downloadRef(ref)
+	cnt, err := c.downloadRef(ref)
 	if err != nil {
 		return err
 	}
@@ -68,17 +94,17 @@ func (b *Boot) DownloadURL(ref string, hash string) error {
 	}
 
 	zlog.Info("Caching content.", zap.String("ref", ref))
-	if err := b.writeToCache(ref, cnt); err != nil {
+	if err := c.writeToCache(ref, cnt); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (b *Boot) downloadRef(ref string) ([]byte, error) {
+func (c *Manager) downloadRef(ref string) ([]byte, error) {
 	zlog.Info("Downloading content", zap.String("from", ref))
 	if _, err := os.Stat(ref); err == nil {
-		return b.downloadLocalFile(ref)
+		return c.downloadLocalFile(ref)
 	}
 
 	destURL, err := url.Parse(ref)
@@ -88,24 +114,24 @@ func (b *Boot) downloadRef(ref string) ([]byte, error) {
 
 	switch destURL.Scheme {
 	case "file":
-		return b.downloadFileURL(destURL)
+		return c.downloadFileURL(destURL)
 	case "http", "https":
-		return b.downloadHTTPURL(destURL)
+		return c.downloadHTTPURL(destURL)
 	default:
 		return nil, fmt.Errorf("don't know how to handle scheme %q (from ref %q)", destURL.Scheme, destURL)
 	}
 }
 
-func (b *Boot) downloadLocalFile(ref string) ([]byte, error) {
+func (c *Manager) downloadLocalFile(ref string) ([]byte, error) {
 	return ioutil.ReadFile(ref)
 }
 
-func (b *Boot) downloadFileURL(destURL *url.URL) ([]byte, error) {
+func (c *Manager) downloadFileURL(destURL *url.URL) ([]byte, error) {
 	fmt.Printf("Path %s, Raw path: %s\n", destURL.Path, destURL.RawPath)
 	return []byte{}, nil
 }
 
-func (b *Boot) downloadHTTPURL(destURL *url.URL) ([]byte, error) {
+func (c *Manager) downloadHTTPURL(destURL *url.URL) ([]byte, error) {
 	req, err := http.NewRequest("GET", destURL.String(), nil)
 	if err != nil {
 		return nil, err
@@ -132,31 +158,23 @@ func (b *Boot) downloadHTTPURL(destURL *url.URL) ([]byte, error) {
 	return cnt, nil
 }
 
-func (b *Boot) writeToCache(ref string, content []byte) error {
+func (c *Manager) writeToCache(ref string, content []byte) error {
 	fileName := replaceAllWeirdities(ref)
-	return ioutil.WriteFile(filepath.Join(b.cachePath, fileName), content, 0666)
+	return ioutil.WriteFile(filepath.Join(c.cachePath, fileName), content, 0666)
 }
 
-func (b *Boot) isInCache(ref string) bool {
-	fileName := filepath.Join(b.cachePath, replaceAllWeirdities(ref))
 
-	if _, err := os.Stat(fileName); err == nil {
-		return true
-	}
-	return false
+func (c *Manager) ReadFromCache(ref string) ([]byte, error) {
+	fileName := replaceAllWeirdities(ref)
+	return ioutil.ReadFile(filepath.Join(c.cachePath, fileName))
 }
 
-func (b *Boot) ReadFromCache(ref string) ([]byte, error) {
+func (c *Manager) ReaderFromCache(ref string) (io.ReadCloser, error) {
 	fileName := replaceAllWeirdities(ref)
-	return ioutil.ReadFile(filepath.Join(b.cachePath, fileName))
+	return os.Open(filepath.Join(c.cachePath, fileName))
 }
 
-func (b *Boot) ReaderFromCache(ref string) (io.ReadCloser, error) {
+func (c *Manager) FileNameFromCache(ref string) string {
 	fileName := replaceAllWeirdities(ref)
-	return os.Open(filepath.Join(b.cachePath, fileName))
-}
-
-func (b *Boot) FileNameFromCache(ref string) string {
-	fileName := replaceAllWeirdities(ref)
-	return filepath.Join(b.cachePath, fileName)
+	return filepath.Join(c.cachePath, fileName)
 }

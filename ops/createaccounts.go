@@ -1,8 +1,9 @@
-package boot
+package ops
 
 import (
 	"fmt"
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
+	"github.com/dfuse-io/eosio-boot/snapshot"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
@@ -11,7 +12,7 @@ import (
 )
 
 func init() {
-	eosboot.Register("snapshot.create_accounts", &OpSnapshotCreateAccounts{})
+	Register("snapshot.create_accounts", &OpSnapshotCreateAccounts{})
 }
 
 type OpSnapshotCreateAccounts struct {
@@ -19,18 +20,18 @@ type OpSnapshotCreateAccounts struct {
 	TestnetTruncateSnapshot int    `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
-func (op *OpSnapshotCreateAccounts) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
-	snapshotFile, err := b.GetContentsCacheRef("snapshot.csv")
+func (op *OpSnapshotCreateAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+	snapshotFile, err := c.GetContentsCacheRef("snapshot.csv")
 	if err != nil {
 		return nil, err
 	}
 
-	rawSnapshot, err := b.ReadFromCache(snapshotFile)
+	rawSnapshot, err := c.ReadFromCache(snapshotFile)
 	if err != nil {
 		return nil, fmt.Errorf("reading snapshot file: %s", err)
 	}
 
-	snapshotData, err := eosboot.NewSnapshot(rawSnapshot)
+	snapshotData, err := snapshot.New(rawSnapshot)
 	if err != nil {
 		return nil, fmt.Errorf("loading snapshot csv: %s", err)
 	}
@@ -51,7 +52,7 @@ func (op *OpSnapshotCreateAccounts) Actions(b *eosboot.Boot) (out []*eos.Action,
 
 		destAccount := AN(hodler.AccountName)
 		destPubKey := hodler.EOSPublicKey
-		if b.HackVotingAccounts {
+		if c.HackVotingAccounts() {
 			destPubKey = wellKnownPubkey
 		}
 

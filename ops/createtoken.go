@@ -1,13 +1,13 @@
-package boot
+package ops
 
 import (
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/token"
 )
 
 func init() {
-	eosboot.Register("token.create", &OpCreateToken{})
+	Register("token.create", &OpCreateToken{})
 }
 
 
@@ -16,7 +16,7 @@ type OpCreateToken struct {
 	Amount  eos.Asset       `json:"amount"`
 }
 
-func (op *OpCreateToken) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
+func (op *OpCreateToken) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
 	act := token.NewCreate(op.Account, op.Amount)
 	return append(out, act), nil
 }

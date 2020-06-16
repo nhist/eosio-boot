@@ -1,14 +1,14 @@
-package boot
+package ops
 
 import (
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/system"
 )
 
 
 func init() {
-	eosboot.Register("system.buy_ram", &OpBuyRam{})
+	Register("system.buy_ram", &OpBuyRam{})
 }
 
 
@@ -18,7 +18,7 @@ type OpBuyRam struct {
 	EOSQuantity uint64 `json:"eos_quantity"`
 }
 
-func (op *OpBuyRam) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
+func (op *OpBuyRam) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
 	return append(out, system.NewBuyRAM(op.Payer, op.Receiver, op.EOSQuantity)), nil
 }
 

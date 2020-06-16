@@ -1,15 +1,18 @@
-package boot
+package ops
 
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"go.uber.org/zap"
 	"reflect"
 )
 
+
+
 type Operation interface {
-	Actions(b *Boot) ([]*eos.Action, error)
+	Actions(c *config.OpConfig) ([]*eos.Action, error)
 }
 
 var operationsRegistry = map[string]Operation{}

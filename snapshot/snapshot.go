@@ -1,4 +1,4 @@
-package boot
+package snapshot
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ type SnapshotLine struct {
 	AccountName     string
 }
 
-func NewSnapshot(content []byte) (out Snapshot, err error) {
+func New(content []byte) (out Snapshot, err error) {
 	reader := csv.NewReader(bytes.NewBuffer(content))
 	allRecords, err := reader.ReadAll()
 	if err != nil {
@@ -54,7 +54,7 @@ type UnregdSnapshotLine struct {
 	Balance         eos.Asset
 }
 
-func NewUnregdSnapshot(content []byte) (out UnregdSnapshot, err error) {
+func NewUnregd(content []byte) (out UnregdSnapshot, err error) {
 	reader := csv.NewReader(bytes.NewBuffer(content))
 	allRecords, err := reader.ReadAll()
 	if err != nil {

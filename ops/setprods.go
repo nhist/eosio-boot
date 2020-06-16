@@ -1,30 +1,28 @@
-package boot
+package ops
 
 import (
-	"fmt"
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
-	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 	"go.uber.org/zap"
 )
 
 func init() {
-	eosboot.Register("system.setprods", &OpSetProds{})
+	Register("system.setprods", &OpSetProds{})
 }
 
 type OpSetProds struct {
 	Prods []producerKeyString
 }
 
-func (op *OpSetProds) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
+func (op *OpSetProds) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
 	var prodKeys []system.ProducerKey
 
 	for _, key := range op.Prods {
 		prodKey := system.ProducerKey{
 			ProducerName: key.ProducerName,
 		}
-		pubKey, err := decodeOpPublicKey(b, key.BlockSigningKeyString)
+		pubKey, err := decodeOpPublicKey(c, key.BlockSigningKeyString)
 		if err != nil {
 			return nil, err
 		}
@@ -32,7 +30,7 @@ func (op *OpSetProds) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
 		prodKeys = append(prodKeys, prodKey)
 	}
 
-	pubKey, err := getBootKey(b)
+	pubKey, err := getBootKey(c)
 	if err != nil {
 		return nil, err
 	}
@@ -60,17 +58,3 @@ type producerKeyString struct {
 }
 
 
-// this is use to support ephemeral key
-func getBootKey(b *eosboot.Boot) (ecc.PublicKey, error) {
-	privateKey, err := b.GetBootseqKey("boot")
-	if err == nil {
-		return privateKey.PublicKey(), nil
-	}
-
-	privateKey, err = b.GetBootseqKey("ephemeral")
-	if err == nil {
-		return privateKey.PublicKey(), nil
-	}
-
-	return ecc.PublicKey{}, fmt.Errorf("cannot find boot/ephemeral key")
-}

@@ -3,13 +3,15 @@ package boot
 import (
 	"crypto/sha256"
 	"fmt"
+	"github.com/dfuse-io/eosio-boot/content"
+	"github.com/dfuse-io/eosio-boot/ops"
 	"io/ioutil"
 )
 
 type BootSeq struct {
-	Keys         map[string]string `json:"keys"`
-	Contents     []*ContentRef     `json:"contents"`
-	BootSequence []*OperationType  `json:"boot_sequence"`
+	Keys         map[string]string    `json:"keys"`
+	Contents     []*content.ContentRef        `json:"contents"`
+	BootSequence []*ops.OperationType `json:"boot_sequence"`
 	Checksum     string
 }
 
@@ -26,8 +28,3 @@ func readBootSeq(filename string) (out *BootSeq, err error) {
 	return
 }
 
-type ContentRef struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
-	Hash string `json:"hash"`
-}

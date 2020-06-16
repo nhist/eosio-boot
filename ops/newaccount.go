@@ -1,13 +1,13 @@
-package boot
+package ops
 
 import (
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/system"
 )
 
 func init() {
-	eosboot.Register("system.newaccount", &OpNewAccount{})
+	Register("system.newaccount", &OpNewAccount{})
 }
 
 
@@ -18,8 +18,8 @@ type OpNewAccount struct {
 	RamBytes   uint32 `json:"ram_bytes"`
 }
 
-func (op *OpNewAccount) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
-	pubKey, err := decodeOpPublicKey(b, op.Pubkey)
+func (op *OpNewAccount) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+	pubKey, err := decodeOpPublicKey(c, op.Pubkey)
 	if err != nil {
 		return nil, err
 	}

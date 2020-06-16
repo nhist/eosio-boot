@@ -4,18 +4,10 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"gopkg.in/olivere/elastic.v3/backoff"
 	"log"
 	"time"
-
-	eos "github.com/eoscanada/eos-go"
-	"gopkg.in/olivere/elastic.v3/backoff"
 )
-
-// AN is a shortcut to create an AccountName
-var AN = eos.AN
-
-// PN is a shortcut to create a PermissionName
-var PN = eos.PN
 
 func Retry(attempts int, sleep time.Duration, callback func() error) (err error) {
 	b := backoff.NewExponentialBackoff(sleep, 5*time.Second)

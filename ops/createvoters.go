@@ -1,16 +1,16 @@
-package boot
+package ops
 
 import (
 	"bytes"
 	"fmt"
-	eosboot "github.com/dfuse-io/eosio-boot"
+	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/system"
 	"github.com/eoscanada/eos-go/token"
 )
 
 func init() {
-	eosboot.Register("system.create_voters", &OpCreateVoters{})
+	Register("system.create_voters", &OpCreateVoters{})
 }
 
 
@@ -20,8 +20,8 @@ type OpCreateVoters struct {
 	Count   int
 }
 
-func (op *OpCreateVoters) Actions(b *eosboot.Boot) (out []*eos.Action, err error) {
-	pubKey, err := decodeOpPublicKey(b, op.Pubkey)
+func (op *OpCreateVoters) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+	pubKey, err := decodeOpPublicKey(c, op.Pubkey)
 	if err != nil {
 		return nil, err
 	}
