@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/eoscanada/eos-go"
-	_ "github.com/dfuse-io/eosio-boot/ops"
 	"go.uber.org/zap"
 	"reflect"
 )
