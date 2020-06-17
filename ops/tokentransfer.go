@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/token"
 )
 
@@ -17,7 +18,8 @@ type OpTransferToken struct {
 	Memo     string
 }
 
-func (op *OpTransferToken) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
-	act := token.NewTransfer(op.From, op.To, op.Quantity, op.Memo)
-	return append(out, act), nil
+func (op *OpTransferToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
+	in <- token.NewTransfer(op.From, op.To, op.Quantity, op.Memo)
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }

@@ -20,24 +20,24 @@ type OpSnapshotCreateAccounts struct {
 	TestnetTruncateSnapshot int    `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
-func (op *OpSnapshotCreateAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+func (op *OpSnapshotCreateAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	snapshotFile, err := c.GetContentsCacheRef("snapshot.csv")
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	rawSnapshot, err := c.ReadFromCache(snapshotFile)
 	if err != nil {
-		return nil, fmt.Errorf("reading snapshot file: %s", err)
+		return fmt.Errorf("reading snapshot file: %s", err)
 	}
 
 	snapshotData, err := snapshot.New(rawSnapshot)
 	if err != nil {
-		return nil, fmt.Errorf("loading snapshot csv: %s", err)
+		return fmt.Errorf("loading snapshot csv: %s", err)
 	}
 
 	if len(snapshotData) == 0 {
-		return nil, fmt.Errorf("snapshot is empty or not loaded")
+		return fmt.Errorf("snapshot is empty or not loaded")
 	}
 
 	wellKnownPubkey, _ := ecc.NewPublicKey("EOS6MRyAjQq8ud7hVNYcfnVPJqcVpscN5So8BhtHuGYqET5GDW5CV")
@@ -56,21 +56,22 @@ func (op *OpSnapshotCreateAccounts) Actions(c *config.OpConfig) (out []*eos.Acti
 			destPubKey = wellKnownPubkey
 		}
 
-		out = append(out, system.NewNewAccount(AN("eosio"), destAccount, destPubKey))
-
 		cpuStake, netStake, rest := splitSnapshotStakes(hodler.Balance)
 
+		in <- system.NewNewAccount(AN("eosio"), destAccount, destPubKey)
 		// special case `transfer` for `b1` ?
-		out = append(out, system.NewDelegateBW(AN("eosio"), destAccount, cpuStake, netStake, true))
-		out = append(out, system.NewBuyRAMBytes(AN("eosio"), destAccount, uint32(op.BuyRAMBytes)))
-		out = append(out, nil) // end transaction
+		in <- system.NewDelegateBW(AN("eosio"), destAccount, cpuStake, netStake, true)
+		in <- system.NewBuyRAMBytes(AN("eosio"), destAccount, uint32(op.BuyRAMBytes))
+		in <- EndTransaction(opPubkey) // end transaction
 
 		memo := "Welcome " + hodler.EthereumAddress[len(hodler.EthereumAddress)-6:]
-		out = append(out, token.NewTransfer(AN("eosio"), destAccount, rest, memo), nil)
+		in <- token.NewTransfer(AN("eosio"), destAccount, rest, memo)
+		in <- EndTransaction(opPubkey) // end transaction
 	}
-
-	return
+	return nil
 }
+
+
 
 func splitSnapshotStakes(balance eos.Asset) (cpu, net, xfer eos.Asset) {
 	if balance.Amount < 5000 {

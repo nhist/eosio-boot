@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -16,14 +17,15 @@ type OpSetCode struct {
 	ContractNameRef string `json:"contract_name_ref"`
 }
 
-func (op *OpSetCode) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+
+func (op *OpSetCode) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	wasmFileRef, err := c.GetContentsCacheRef(fmt.Sprintf("%s.wasm", op.ContractNameRef))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	abiFileRef, err := c.GetContentsCacheRef(fmt.Sprintf("%s.abi", op.ContractNameRef))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	actions, err := system.NewSetContract(
@@ -32,10 +34,15 @@ func (op *OpSetCode) Actions(c *config.OpConfig) (out []*eos.Action, err error) 
 		c.FileNameFromCache(abiFileRef),
 	)
 	if err != nil {
-		return nil, fmt.Errorf("NewSetContract %s: %s", op.ContractNameRef, err)
+		return fmt.Errorf("NewSetContract %s: %s", op.ContractNameRef, err)
 	}
 
-	return actions, nil
+	for _, act := range actions {
+		in <- act
+	}
+
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }
 
 

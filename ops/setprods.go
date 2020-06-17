@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 	"go.uber.org/zap"
 )
@@ -15,7 +16,7 @@ type OpSetProds struct {
 	Prods []producerKeyString
 }
 
-func (op *OpSetProds) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+func (op *OpSetProds) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	var prodKeys []system.ProducerKey
 
 	for _, key := range op.Prods {
@@ -24,7 +25,7 @@ func (op *OpSetProds) Actions(c *config.OpConfig) (out []*eos.Action, err error)
 		}
 		pubKey, err := decodeOpPublicKey(c, key.BlockSigningKeyString)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		prodKey.BlockSigningKey = pubKey
 		prodKeys = append(prodKeys, prodKey)
@@ -32,7 +33,7 @@ func (op *OpSetProds) Actions(c *config.OpConfig) (out []*eos.Action, err error)
 
 	pubKey, err := getBootKey(c)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	if len(prodKeys) == 0 {
@@ -48,8 +49,9 @@ func (op *OpSetProds) Actions(c *config.OpConfig) (out []*eos.Action, err error)
 	}
 	zlog.Info("producers are set", zap.Strings("procuders", producers))
 
-	out = append(out, system.NewSetProds(prodKeys))
-	return
+	in <- system.NewSetProds(prodKeys)
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }
 
 type producerKeyString struct {

@@ -8,7 +8,7 @@ import (
 var zlog *zap.Logger
 
 func init() {
-	logging.Register("github.com/dfuse-io/eosio-boot/booter", &zlog)
+	logging.Register("github.com/dfuse-io/eosio-boot/boot", &zlog)
 }
 
 

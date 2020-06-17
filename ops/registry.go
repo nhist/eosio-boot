@@ -4,18 +4,26 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dfuse-io/eosio-boot/config"
-	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"go.uber.org/zap"
 	"reflect"
 )
 
 
-
 type Operation interface {
-	Actions(c *config.OpConfig) ([]*eos.Action, error)
+	Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error
 }
 
 var operationsRegistry = map[string]Operation{}
+
+func EndTransaction(signer ecc.PublicKey) *TransactionBoundary{
+	return &TransactionBoundary{
+		Signer: signer,
+	}
+}
+type TransactionBoundary struct {
+	Signer ecc.PublicKey
+}
 
 func Register(key string, operation Operation) {
 	if key == "" {
@@ -27,10 +35,12 @@ func Register(key string, operation Operation) {
 
 }
 
+
 type OperationType struct {
 	Op     string
 	Signer string
 	Label  string
+	Validate bool
 	Data   Operation
 }
 
@@ -39,6 +49,7 @@ func (o *OperationType) UnmarshalJSON(data []byte) error {
 		Op     string
 		Signer string
 		Label  string
+		DisableValidation bool
 		Data   json.RawMessage
 	}{}
 	if err := json.Unmarshal(data, &opData); err != nil {
@@ -69,7 +80,8 @@ func (o *OperationType) UnmarshalJSON(data []byte) error {
 		Op:     opData.Op,
 		Label:  opData.Label,
 		Signer: opData.Signer,
-		Data:   opIface,
+		Validate: !opData.DisableValidation,
+		Data:          opIface,
 	}
 
 	return nil

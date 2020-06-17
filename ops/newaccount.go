@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -18,17 +19,17 @@ type OpNewAccount struct {
 	RamBytes   uint32 `json:"ram_bytes"`
 }
 
-func (op *OpNewAccount) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+func (op *OpNewAccount) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	pubKey, err := decodeOpPublicKey(c, op.Pubkey)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	out = append(out, system.NewNewAccount(op.Creator, op.NewAccount, pubKey))
+	in <- system.NewNewAccount(op.Creator, op.NewAccount, pubKey)
 
 	if op.RamBytes > 0 {
-		out = append(out, system.NewBuyRAMBytes(op.Creator, op.NewAccount, op.RamBytes))
+		in <- system.NewBuyRAMBytes(op.Creator, op.NewAccount, op.RamBytes)
 	}
-
-	return out, nil
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }

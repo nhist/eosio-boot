@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -16,10 +17,10 @@ type OpResignAccounts struct {
 	TestnetKeepAccounts bool `json:"TESTNET_KEEP_ACCOUNTS"`
 }
 
-func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
+func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	if op.TestnetKeepAccounts {
 		zlog.Debug("keeping system accounts around, for testing purposes.")
-		return
+		return nil
 	}
 
 	systemAccount := AN("eosio")
@@ -32,8 +33,7 @@ func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err 
 			continue
 		}
 
-		out = append(out,
-			system.NewUpdateAuth(acct, PN("active"), PN("owner"), eos.Authority{
+			in <- system.NewUpdateAuth(acct, PN("active"), PN("owner"), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -44,8 +44,8 @@ func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err 
 						Weight: 1,
 					},
 				},
-			}, PN("active")),
-			system.NewUpdateAuth(acct, PN("owner"), PN(""), eos.Authority{
+			}, PN("active"))
+			in <- system.NewUpdateAuth(acct, PN("owner"), PN(""), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -56,13 +56,12 @@ func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err 
 						Weight: 1,
 					},
 				},
-			}, PN("owner")),
-		)
+			}, PN("owner"))
+
 	}
 
 	if eosioPresent {
-		out = append(out,
-			system.NewUpdateAuth(systemAccount, PN("active"), PN("owner"), eos.Authority{
+			in <- system.NewUpdateAuth(systemAccount, PN("active"), PN("owner"), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -73,8 +72,8 @@ func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err 
 						Weight: 1,
 					},
 				},
-			}, PN("active")),
-			system.NewUpdateAuth(systemAccount, PN("owner"), PN(""), eos.Authority{
+			}, PN("active"))
+			in <- system.NewUpdateAuth(systemAccount, PN("owner"), PN(""), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -85,11 +84,9 @@ func (op *OpResignAccounts) Actions(c *config.OpConfig) (out []*eos.Action, err 
 						Weight: 1,
 					},
 				},
-			}, PN("owner")),
-		)
+			}, PN("owner"))
 	}
 
-	out = append(out, nil)
-
-	return
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }

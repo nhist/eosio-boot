@@ -7,42 +7,63 @@ import (
 	"errors"
 	"fmt"
 	"github.com/dfuse-io/eosio-boot/config"
+	"github.com/dfuse-io/eosio-boot/ops"
 	"github.com/eoscanada/eos-go"
 	"go.uber.org/zap"
 	"os"
 	"time"
 )
+type ActionMap map[string]*eos.Action
 
 func (b *Boot) RunChainValidation(opConfig *config.OpConfig) (bool, error) {
 	bootSeqMap := ActionMap{}
 	bootSeq := []*eos.Action{}
 
-	for _, step := range b.bootSequence.BootSequence {
-		acts, err := step.Data.Actions(opConfig)
-		if err != nil {
-			return false, fmt.Errorf("validating: getting actions for step %q: %s", step.Op, err)
-		}
-
-		for _, stepAction := range acts {
-			if stepAction == nil {
+	actions := make(chan interface{}, 500)
+	go func() {
+		defer close(actions)
+		for _, step := range b.bootSequence.BootSequence {
+			if !step.Validate {
 				continue
 			}
 
-			stepAction.SetToServer(true)
-			data, err := eos.MarshalBinary(stepAction)
+			pubkey, err := b.getOpPubkey(step)
 			if err != nil {
-				return false, fmt.Errorf("validating: binary marshalling: %s", err)
+				zlog.Error("unable to get public key for operation", zap.Error(err))
+				return
 			}
-			key := sha2(data)
 
-			// if _, ok := bootSeqMap[key]; ok {
-			// 	// TODO: don't fatal here plz :)
-			// 	log.Fatalf("Same action detected twice [%s] with key [%s]\n", stepAction.Name, key)
-			// }
-			bootSeqMap[key] = stepAction
-			bootSeq = append(bootSeq, stepAction)
+
+			err = step.Data.Actions(pubkey, opConfig , actions)
+			if err != nil {
+				zlog.Error("unable to get actions for step", zap.String("ops", step.Op), zap.Error(err))
+				return
+			}
 		}
+	}()
 
+	for act := range actions {
+		switch act.(type) {
+		case *ops.TransactionBoundary:
+		case *eos.Action:
+			action := act.(*eos.Action)
+			if action != nil {
+				action.SetToServer(true)
+				data, err := eos.MarshalBinary(action)
+				if err != nil {
+					return false, fmt.Errorf("validating: binary marshalling: %s", err)
+				}
+				key := sha2(data)
+				// if _, ok := bootSeqMap[key]; ok {
+				// 	// TODO: don't fatal here plz :)
+				// 	log.Fatalf("Same action detected twice [%s] with key [%s]\n", stepAction.Name, key)
+				// }
+				bootSeqMap[key] = action
+				bootSeq = append(bootSeq, action)
+			}
+		default:
+			panic("validation: unexpected type in action chan")
+		}
 	}
 
 	err := b.validateTargetNetwork(bootSeqMap, bootSeq)
@@ -187,4 +208,46 @@ func (b *Boot) flushMissingActions(seenMap map[string]bool, bootSeq []*eos.Actio
 			fl.Write([]byte("\n"))
 		}
 	}
+}
+
+
+
+type ValidationError struct {
+	Err               error
+	BlockNumber       int
+	Action            *eos.Action
+	RawAction         []byte
+	Index             int
+	ActionHexData     string
+	PackedTransaction *eos.PackedTransaction
+}
+
+func (e ValidationError) Error() string {
+	s := fmt.Sprintf("Action [%d][%s::%s] absent from blocks\n", e.Index, e.Action.Account, e.Action.Name)
+
+	data, err := json.Marshal(e.Action)
+	if err != nil {
+		s += fmt.Sprintf("    json generation err: %s\n", err)
+	} else {
+		s += fmt.Sprintf("    json data: %s\n", string(data))
+	}
+	s += fmt.Sprintf("    hex data: %s\n", hex.EncodeToString(e.RawAction))
+	s += fmt.Sprintf("    error: %s\n", e.Err.Error())
+
+	return s
+}
+
+type ValidationErrors struct {
+	Errors []error
+}
+
+func (v ValidationErrors) Error() string {
+	s := ""
+	for _, err := range v.Errors {
+		s += ">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>\n"
+		s += err.Error()
+		s += "<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<\n"
+	}
+
+	return s
 }

@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -19,6 +20,8 @@ type OpDelegateBW struct {
 	Transfer bool
 }
 
-func (op *OpDelegateBW) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
-	return append(out, system.NewDelegateBW(op.From, op.To, eos.NewEOSAsset(op.StakeCPU), eos.NewEOSAsset(op.StakeNet), op.Transfer)), nil
+func (op *OpDelegateBW) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
+	in <- system.NewDelegateBW(op.From, op.To, eos.NewEOSAsset(op.StakeCPU), eos.NewEOSAsset(op.StakeNet), op.Transfer)
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }

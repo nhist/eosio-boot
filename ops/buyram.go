@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -18,7 +19,11 @@ type OpBuyRam struct {
 	EOSQuantity uint64 `json:"eos_quantity"`
 }
 
-func (op *OpBuyRam) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
-	return append(out, system.NewBuyRAM(op.Payer, op.Receiver, op.EOSQuantity)), nil
-}
+func (op *OpBuyRam) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
+	in <- system.NewBuyRAM(op.Payer, op.Receiver, op.EOSQuantity)
+	in <- &TransactionBoundary{
+		Signer: opPubkey,
+	} // end transaction
+	return nil
 
+}

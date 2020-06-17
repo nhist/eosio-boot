@@ -48,9 +48,17 @@ func (b *Boot) parseBootseqKeys() error {
 }
 
 
-func (b *Boot) GetBootseqKey(label string) (*ecc.PrivateKey, error) {
-	if _, found := b.bootseqKeys[label]; found {
-		return b.bootseqKeys[label], nil
+func (b *Boot) getBootKey() (ecc.PublicKey, error) {
+	privKey, err := b.getBootseqKey("boot")
+	if err == nil {
+		return privKey.PublicKey(), nil
 	}
-	return nil, fmt.Errorf("bootseq does not contain key with label %q", label)
+
+	privKey, err = b.getBootseqKey("ephemeral")
+	if err == nil {
+		return privKey.PublicKey(), nil
+	}
+
+	return ecc.PublicKey{}, fmt.Errorf("unable to find boot or ephemeral key in boot seq")
+
 }

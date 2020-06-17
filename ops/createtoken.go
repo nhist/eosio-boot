@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/token"
 )
 
@@ -16,7 +17,8 @@ type OpCreateToken struct {
 	Amount  eos.Asset       `json:"amount"`
 }
 
-func (op *OpCreateToken) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
-	act := token.NewCreate(op.Account, op.Amount)
-	return append(out, act), nil
+func (op *OpCreateToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
+	in <- token.NewCreate(op.Account, op.Amount)
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }

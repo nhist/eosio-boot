@@ -3,6 +3,7 @@ package ops
 import (
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -16,6 +17,9 @@ type OpBuyRamBytes struct {
 	Bytes    uint32
 }
 
-func (op *OpBuyRamBytes) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
-	return append(out, system.NewBuyRAMBytes(op.Payer, op.Receiver, op.Bytes)), nil
+func (op *OpBuyRamBytes) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
+	in <- system.NewBuyRAMBytes(op.Payer, op.Receiver, op.Bytes)
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
+
 }

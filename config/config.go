@@ -9,7 +9,6 @@ import (
 type OpConfig struct {
 	contentRefs []*content.ContentRef
 	privateKeys map[string]*ecc.PrivateKey
-
 	contentManager     *content.Manager
 }
 

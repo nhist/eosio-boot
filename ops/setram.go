@@ -2,7 +2,7 @@ package ops
 
 import (
 	"github.com/dfuse-io/eosio-boot/config"
-	"github.com/eoscanada/eos-go"
+	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 )
 
@@ -14,6 +14,8 @@ type OpSetRAM struct {
 	MaxRAMSize uint64 `json:"max_ram_size"`
 }
 
-func (op *OpSetRAM) Actions(c *config.OpConfig) (out []*eos.Action, err error) {
-	return append(out, system.NewSetRAM(op.MaxRAMSize)), nil
+func (op *OpSetRAM) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
+	in <- system.NewSetRAM(op.MaxRAMSize)
+	in <- EndTransaction(opPubkey) // end transaction
+	return nil
 }
