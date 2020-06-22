@@ -15,7 +15,7 @@ type OpSetRAM struct {
 }
 
 func (op *OpSetRAM) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
-	in <- system.NewSetRAM(op.MaxRAMSize)
+	in <- (*TransactionAction)(system.NewSetRAM(op.MaxRAMSize))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 }

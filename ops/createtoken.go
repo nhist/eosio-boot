@@ -18,7 +18,7 @@ type OpCreateToken struct {
 }
 
 func (op *OpCreateToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
-	in <- token.NewCreate(op.Account, op.Amount)
+	in <- (*TransactionAction)(token.NewCreate(op.Account, op.Amount))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 }

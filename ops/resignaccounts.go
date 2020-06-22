@@ -33,7 +33,7 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 			continue
 		}
 
-			in <- system.NewUpdateAuth(acct, PN("active"), PN("owner"), eos.Authority{
+			in <- (*TransactionAction)(system.NewUpdateAuth(acct, PN("active"), PN("owner"), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -44,8 +44,8 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 						Weight: 1,
 					},
 				},
-			}, PN("active"))
-			in <- system.NewUpdateAuth(acct, PN("owner"), PN(""), eos.Authority{
+			}, PN("active")))
+			in <- (*TransactionAction)(system.NewUpdateAuth(acct, PN("owner"), PN(""), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -56,12 +56,12 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 						Weight: 1,
 					},
 				},
-			}, PN("owner"))
+			}, PN("owner")))
 
 	}
 
 	if eosioPresent {
-			in <- system.NewUpdateAuth(systemAccount, PN("active"), PN("owner"), eos.Authority{
+			in <- (*TransactionAction)(system.NewUpdateAuth(systemAccount, PN("active"), PN("owner"), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -72,8 +72,8 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 						Weight: 1,
 					},
 				},
-			}, PN("active"))
-			in <- system.NewUpdateAuth(systemAccount, PN("owner"), PN(""), eos.Authority{
+			}, PN("active")))
+			in <- (*TransactionAction)(system.NewUpdateAuth(systemAccount, PN("owner"), PN(""), eos.Authority{
 				Threshold: 1,
 				Accounts: []eos.PermissionLevelWeight{
 					eos.PermissionLevelWeight{
@@ -84,7 +84,7 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 						Weight: 1,
 					},
 				},
-			}, PN("owner"))
+			}, PN("owner")))
 	}
 
 	in <- EndTransaction(opPubkey) // end transaction

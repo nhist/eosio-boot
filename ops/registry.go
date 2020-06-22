@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/dfuse-io/eosio-boot/config"
+	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
 	"go.uber.org/zap"
 	"reflect"
@@ -16,13 +17,16 @@ type Operation interface {
 
 var operationsRegistry = map[string]Operation{}
 
-func EndTransaction(signer ecc.PublicKey) *TransactionBoundary{
-	return &TransactionBoundary{
-		Signer: signer,
-	}
-}
+type TransactionAction eos.Action
+
 type TransactionBoundary struct {
 	Signer ecc.PublicKey
+}
+
+func EndTransaction(signer ecc.PublicKey) TransactionBoundary{
+	return TransactionBoundary{
+		Signer: signer,
+	}
 }
 
 func Register(key string, operation Operation) {
@@ -34,7 +38,6 @@ func Register(key string, operation Operation) {
 	operationsRegistry[key] = operation
 
 }
-
 
 type OperationType struct {
 	Op     string

@@ -17,7 +17,7 @@ type OpSetPriv struct {
 }
 
 func (op *OpSetPriv) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
-	in <- system.NewSetPriv(op.Account)
+	in <- (*TransactionAction)(system.NewSetPriv(op.Account))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 

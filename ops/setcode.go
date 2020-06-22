@@ -38,7 +38,7 @@ func (op *OpSetCode) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan
 	}
 
 	for _, act := range actions {
-		in <- act
+		in <- (*TransactionAction)(act)
 	}
 
 	in <- EndTransaction(opPubkey) // end transaction

@@ -49,7 +49,7 @@ func (op *OpSetProds) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in cha
 	}
 	zlog.Info("producers are set", zap.Strings("procuders", producers))
 
-	in <- system.NewSetProds(prodKeys)
+	in <- (*TransactionAction)(system.NewSetProds(prodKeys))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 }

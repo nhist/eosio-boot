@@ -11,6 +11,7 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 	"go.uber.org/zap"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -108,9 +109,9 @@ func (b *Boot) Run() (checksums string, err error) {
 
 
 
-	actions := make(chan interface{}, 500)
+	trxEventCh := make(chan interface{}, 500)
 	go func() {
-		defer close(actions)
+		defer close(trxEventCh)
 		for _, step := range b.bootSequence.BootSequence {
 
 			zlog.Info("action",
@@ -125,7 +126,7 @@ func (b *Boot) Run() (checksums string, err error) {
 				return
 			}
 
-			err = step.Data.Actions(pubkey, opConfig , actions)
+			err = step.Data.Actions(pubkey, opConfig , trxEventCh)
 			if err != nil {
 				zlog.Error("unable to get actions for step", zap.String("ops", step.Op), zap.Error(err))
 				return
@@ -134,24 +135,49 @@ func (b *Boot) Run() (checksums string, err error) {
 		}
 	}()
 
+
+	index := 0
 	for {
-		trxBundle := b.chunkifyActionChan(actions)
+		index++
+		trxBundle := b.chunkifyActionChan(trxEventCh)
 		if trxBundle == nil {
 			// chunkify exited without given any chunks, channel must be closed
 			break
 		}
 
+		if len(trxBundle.actions) == 0 {
+			// nothing to execute skip
+			continue
+		}
+
+		str := []string{}
+		for _, t := range trxBundle.actions {
+			str = append(str, fmt.Sprintf("%s:%s",t.Account, t.Name))
+		}
+		zlog.Debug("pushing transaction",
+			zap.Int("index", index),
+			zap.Int("action_count", len(trxBundle.actions)),
+			zap.String("actions", strings.Join(str, ", ")),
+		)
 		b.targetNetAPI.SetCustomGetRequiredKeys(func(ctx context.Context, tx *eos.Transaction) (out []ecc.PublicKey, err error) {
 			out = append(out, trxBundle.signer)
 			return out, nil
 		})
 
 		err := Retry(25, time.Second, func() error {
-			_, err := b.targetNetAPI.SignPushActions(ctx, trxBundle.actions...)
+			resp, err := b.targetNetAPI.SignPushActions(ctx, trxBundle.actions...)
 			if err != nil {
-				zlog.Error("error pushing transaction bundle", zap.Error(err))
+				zlog.Error("error pushing transaction bundle",
+					zap.Error(err),
+					zap.Int("index", index),
+				)
 				return fmt.Errorf("push actions of transaciton bundle: %w", err)
 			}
+
+			zlog.Debug("just pushed trx",
+				zap.String("trx_id", resp.TransactionID),
+				zap.Int("index", index),
+			)
 			return nil
 		})
 		if err != nil {
@@ -182,25 +208,8 @@ type transactionBundle struct {
 	signer ecc.PublicKey
 }
 
-func ChunkifyActions(actions []*eos.Action) (out [][]*eos.Action) {
-	currentChunk := []*eos.Action{}
-	for _, act := range actions {
-		if act == nil {
-			if len(currentChunk) != 0 {
-				out = append(out, currentChunk)
-			}
-			currentChunk = []*eos.Action{}
-		} else {
-			currentChunk = append(currentChunk, act)
-		}
-	}
-	if len(currentChunk) > 0 {
-		out = append(out, currentChunk)
-	}
-	return
-}
 
-func (b *Boot) chunkifyActionChan(actions chan interface{}) (*transactionBundle) {
+func (b *Boot) chunkifyActionChan(trxEventCh chan interface{}) *transactionBundle {
 	out := &transactionBundle{
 		actions: []*eos.Action{},
 	}
@@ -208,22 +217,17 @@ func (b *Boot) chunkifyActionChan(actions chan interface{}) (*transactionBundle)
 		if len(out.actions) > b.maxActionCountPerTrx {
 			return out
 		}
-
-		act, ok := <- actions
+		act, ok := <-trxEventCh
 		if !ok {
 			// channel is closed, there is not transaction to process
 			return nil
 		}
-		switch act.(type) {
-		case *ops.TransactionBoundary:
-			trxBoundary := act.(*ops.TransactionBoundary)
-			out.signer = trxBoundary.Signer
+		switch v := act.(type) {
+		case ops.TransactionBoundary:
+			out.signer = v.Signer
 			return out
-		case *eos.Action:
-			action := act.(*eos.Action)
-			if action != nil {
-				out.actions = append(out.actions, action)
-			}
+		case *ops.TransactionAction:
+			out.actions = append(out.actions, (*eos.Action)(v))
 		default:
 			panic(fmt.Sprintf("chunkify: unexpected type in action chan"))
 		}
@@ -246,4 +250,3 @@ func (b *Boot) getOpPubkey(op *ops.OperationType)  (ecc.PublicKey, error){
 	}
 	return pubKey, nil
 }
-

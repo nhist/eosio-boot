@@ -47,8 +47,8 @@ func (op *OpInjectUnregdSnapshot) Actions(opPubkey ecc.PublicKey, c *config.OpCo
 		}
 
 		//system.NewDelegatedNewAccount(AN("eosio"), AN(hodler.AccountName), AN("eosio.unregd"))
-		in <- unregd.NewAdd(hodler.EthereumAddress, hodler.Balance)
-		in <- token.NewTransfer(AN("eosio"), AN("eosio.unregd"), hodler.Balance, "Future claim")
+		in <- (*TransactionAction)(unregd.NewAdd(hodler.EthereumAddress, hodler.Balance))
+		in <- (*TransactionAction)(token.NewTransfer(AN("eosio"), AN("eosio.unregd"), hodler.Balance, "Future claim"))
 		in <- EndTransaction(opPubkey) // End Transaction
 	}
 

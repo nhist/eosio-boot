@@ -20,10 +20,8 @@ type OpBuyRam struct {
 }
 
 func (op *OpBuyRam) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
-	in <- system.NewBuyRAM(op.Payer, op.Receiver, op.EOSQuantity)
-	in <- &TransactionBoundary{
-		Signer: opPubkey,
-	} // end transaction
+	in <- (*TransactionAction)(system.NewBuyRAM(op.Payer, op.Receiver, op.EOSQuantity))
+	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 
 }

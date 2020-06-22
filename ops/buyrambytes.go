@@ -18,7 +18,7 @@ type OpBuyRamBytes struct {
 }
 
 func (op *OpBuyRamBytes) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
-	in <- system.NewBuyRAMBytes(op.Payer, op.Receiver, op.Bytes)
+	in <- (*TransactionAction)(system.NewBuyRAMBytes(op.Payer, op.Receiver, op.Bytes))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 

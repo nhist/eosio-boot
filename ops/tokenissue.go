@@ -20,7 +20,7 @@ type OpIssueToken struct {
 }
 
 func (op *OpIssueToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
-	in <- token.NewIssue(op.Account, op.Amount, op.Memo)
+	in <- (*TransactionAction)(token.NewIssue(op.Account, op.Amount, op.Memo))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 }

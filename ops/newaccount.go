@@ -25,10 +25,10 @@ func (op *OpNewAccount) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in c
 		return err
 	}
 
-	in <- system.NewNewAccount(op.Creator, op.NewAccount, pubKey)
+	in <- (*TransactionAction)(system.NewNewAccount(op.Creator, op.NewAccount, pubKey))
 
 	if op.RamBytes > 0 {
-		in <- system.NewBuyRAMBytes(op.Creator, op.NewAccount, op.RamBytes)
+		in <- (*TransactionAction)(system.NewBuyRAMBytes(op.Creator, op.NewAccount, op.RamBytes))
 	}
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
