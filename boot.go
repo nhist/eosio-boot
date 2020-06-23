@@ -113,8 +113,7 @@ func (b *Boot) Run() (checksums string, err error) {
 	go func() {
 		defer close(trxEventCh)
 		for _, step := range b.bootSequence.BootSequence {
-
-			zlog.Info("action",
+			zlog.Info("executing bootseq op",
 				zap.String("label", step.Label),
 				zap.String("op", step.Op),
 				zap.String("signer", step.Signer),
@@ -186,7 +185,7 @@ func (b *Boot) Run() (checksums string, err error) {
 		}
 	}
 
-	zlog.Info("Waiting 2 seconds for transactions to flush to blocks")
+	zlog.Info("waiting 2 seconds for transactions to flush to blocks")
 	time.Sleep(2 * time.Second)
 
 	// FIXME: don't do chain validation here..
