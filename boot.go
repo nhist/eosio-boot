@@ -164,7 +164,7 @@ func (b *Boot) Run() (checksums string, err error) {
 		})
 
 		err := Retry(25, time.Second, func() error {
-			resp, err := b.targetNetAPI.SignPushActions(ctx, trxBundle.actions...)
+			_, err := b.targetNetAPI.SignPushActions(ctx, trxBundle.actions...)
 			if err != nil {
 				zlog.Error("error pushing transaction bundle",
 					zap.Error(err),
