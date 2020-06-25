@@ -173,7 +173,7 @@ func (b *Boot) Run() (checksums string, err error) {
 				return fmt.Errorf("push actions of transaciton bundle: %w", err)
 			}
 
-			zlog.Debug("just pushed trx",
+			zlog.Debug("successfully pushed a trx",
 				zap.String("trx_id", resp.TransactionID),
 				zap.Int("index", index),
 			)
