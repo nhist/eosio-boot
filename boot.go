@@ -17,6 +17,12 @@ import (
 
 type option func(b *Boot) *Boot
 
+var traceEnable = false
+
+func init() {
+	traceEnable = os.Getenv("TRACE") == "true"
+}
+
 func WithMaxActionCountPerTrx(max int) option {
 	return func(b *Boot) *Boot {
 		b.maxActionCountPerTrx = max
@@ -170,6 +176,9 @@ func (b *Boot) Run() (checksums string, err error) {
 					zap.Error(err),
 					zap.Int("index", index),
 				)
+				if traceEnable {
+					trxBundle.debugPrint()
+				}
 				return fmt.Errorf("push actions of transaciton bundle: %w", err)
 			}
 
@@ -203,6 +212,26 @@ type transactionBundle struct {
 	signer ecc.PublicKey
 }
 
+// helpful for debug puropses
+func (t *transactionBundle) debugPrint() {
+	acts := []string{}
+	for _, acc := range t.actions {
+		actionKey := fmt.Sprintf("%s:%s",acc.Account, acc.Name)
+		var str string
+		switch actionKey {
+			case "eosio:newaccount":
+				str = fmt.Sprintf("%s:%s",actionKey,acc.Data)
+			case "eosio:setabi":
+				str = fmt.Sprintf("%s:%s",actionKey,acc.Data)
+
+		}
+		acts = append(acts, str)
+	}
+
+	zlog.Debug("transaction bundle dump",
+		zap.Strings("actions", acts),
+	)
+}
 
 func (b *Boot) chunkifyActionChan(trxEventCh chan interface{}) *transactionBundle {
 	out := &transactionBundle{
@@ -245,3 +274,4 @@ func (b *Boot) getOpPubkey(op *ops.OperationType)  (ecc.PublicKey, error){
 	}
 	return pubKey, nil
 }
+
