@@ -9,6 +9,7 @@ import (
 	"github.com/dfuse-io/eosio-boot/snapshot"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
+	"github.com/eoscanada/eos-go/system"
 	"go.uber.org/zap"
 	"os"
 	"strings"
@@ -215,22 +216,23 @@ type transactionBundle struct {
 // helpful for debug puropses
 func (t *transactionBundle) debugPrint() {
 	acts := []string{}
-	for _, acc := range t.actions {
-		actionKey := fmt.Sprintf("%s:%s",acc.Account, acc.Name)
+
+	zlog.Debug("transaction bundle dump start", zap.Int("action_count", len(t.actions)))
+	for _, action := range t.actions {
+		actionKey := fmt.Sprintf("%s:%s", action.Account, action.Name)
 		var str string
 		switch actionKey {
 			case "eosio:newaccount":
-				str = fmt.Sprintf("%s:%s",actionKey,acc.Data)
+				zlog.Debug("action: new account", zap.Reflect("account", (action.ActionData.Data).(system.NewAccount)))
 			case "eosio:setabi":
-				str = fmt.Sprintf("%s:%s",actionKey,acc.Data)
-
+				zlog.Debug("action: set abi", zap.Reflect("abi", (action.ActionData.Data).(system.SetABI)))
+			case "eosio:updateauth":
+				zlog.Debug("action: update auth", zap.Reflect("update", (action.ActionData.Data).(system.UpdateAuth)))
 		}
 		acts = append(acts, str)
 	}
+	zlog.Debug("transaction bundle dump end")
 
-	zlog.Debug("transaction bundle dump",
-		zap.Strings("actions", acts),
-	)
 }
 
 func (b *Boot) chunkifyActionChan(trxEventCh chan interface{}) *transactionBundle {
