@@ -6,13 +6,15 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/dfuse-io/eosio-boot/ops"
 	"github.com/eoscanada/eos-go"
 	"go.uber.org/zap"
-	"os"
-	"time"
 )
+
 type ActionMap map[string]*eos.Action
 
 func (b *Boot) RunChainValidation(opConfig *config.OpConfig) (bool, error) {
@@ -29,13 +31,13 @@ func (b *Boot) RunChainValidation(opConfig *config.OpConfig) (bool, error) {
 
 			pubkey, err := b.getOpPubkey(step)
 			if err != nil {
-				zlog.Error("unable to get public key for operation", zap.Error(err))
+				b.logger.Error("unable to get public key for operation", zap.Error(err))
 				return
 			}
 
-			err = step.Data.Actions(pubkey, opConfig , trxEventCh)
+			err = step.Data.Actions(pubkey, opConfig, trxEventCh)
 			if err != nil {
-				zlog.Error("unable to get actions for step", zap.String("ops", step.Op), zap.Error(err))
+				b.logger.Error("unable to get actions for step", zap.String("ops", step.Op), zap.Error(err))
 				return
 			}
 		}
@@ -67,13 +69,13 @@ func (b *Boot) RunChainValidation(opConfig *config.OpConfig) (bool, error) {
 
 	//err := b.validateTargetNetwork(bootSeqMap, bootSeq)
 	//if err != nil {
-	//	zlog.Info("BOOT SEQUENCE VALIDATION FAILED:", zap.Error(err))
+	//	b.logger.Info("BOOT SEQUENCE VALIDATION FAILED:", zap.Error(err))
 	//	return false, nil
 	//}
 
-	zlog.Info("")
-	zlog.Info("All good! Chain validation succeeded!")
-	zlog.Info("")
+	b.logger.Info("")
+	b.logger.Info("All good! Chain validation succeeded!")
+	b.logger.Info("")
 
 	return true, nil
 }
@@ -85,7 +87,7 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 	b.pingTargetNetwork()
 
 	// TODO: wait for target network to be up, and responding...
-	zlog.Info("Pulling blocks from chain until we gathered all actions to validate:")
+	b.logger.Info("Pulling blocks from chain until we gathered all actions to validate:")
 	blockHeight := 1
 	actionsRead := 0
 	seenMap := map[string]bool{}
@@ -109,14 +111,14 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 				continue
 			}
 
-			zlog.Warn("Failed getting block num from target api", zap.String("message", err.Error()))
+			b.logger.Warn("Failed getting block num from target api", zap.String("message", err.Error()))
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		blockHeight++
 
-		zlog.Info("Receiving block", zap.Uint32("block_num", m.BlockNumber()), zap.String("producer", string(m.Producer)), zap.Int("trx_count", len(m.Transactions)))
+		b.logger.Info("Receiving block", zap.Uint32("block_num", m.BlockNumber()), zap.String("producer", string(m.Producer)), zap.Int("trx_count", len(m.Transactions)))
 
 		if !gotSomeTx && len(m.Transactions) > 2 {
 			gotSomeTx = true
@@ -129,7 +131,7 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 		for _, receipt := range m.Transactions {
 			unpacked, err := receipt.Transaction.Packed.Unpack()
 			if err != nil {
-				zlog.Warn("Unable to unpack transaction, won't be able to fully validate", zap.Error(err))
+				b.logger.Warn("Unable to unpack transaction, won't be able to fully validate", zap.Error(err))
 				return fmt.Errorf("unpack transaction failed")
 			}
 
@@ -137,7 +139,7 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 				act.SetToServer(false)
 				data, err := eos.MarshalBinary(act)
 				if err != nil {
-					zlog.Error("Error marshalling an action", zap.Error(err))
+					b.logger.Error("Error marshalling an action", zap.Error(err))
 					validationErrors = append(validationErrors, ValidationError{
 						Err:               err,
 						BlockNumber:       1, // extract from the block transactionmroot
@@ -161,10 +163,10 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 						ActionHexData:     hex.EncodeToString(act.HexData),
 						Index:             actionsRead,
 					})
-					zlog.Warn("INVALID action", zap.Int("action_read", actionsRead+1), zap.Int("expected_action_count", expectedActionCount), zap.String("account", string(act.Account)), zap.String("action", string(act.Name)))
+					b.logger.Warn("INVALID action", zap.Int("action_read", actionsRead+1), zap.Int("expected_action_count", expectedActionCount), zap.String("account", string(act.Account)), zap.String("action", string(act.Name)))
 				} else {
 					seenMap[key] = true
-					zlog.Info("validated action", zap.Int("action_read", actionsRead+1), zap.Int("expected_action_count", expectedActionCount), zap.String("account", string(act.Account)), zap.String("action", string(act.Name)))
+					b.logger.Info("validated action", zap.Int("action_read", actionsRead+1), zap.Int("expected_action_count", expectedActionCount), zap.String("account", string(act.Account)), zap.String("action", string(act.Name)))
 				}
 
 				actionsRead++
@@ -187,14 +189,13 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 func (b *Boot) flushMissingActions(seenMap map[string]bool, bootSeq []*eos.Action) {
 	fl, err := os.Create("missing_actions.jsonl")
 	if err != nil {
-		zlog.Error("Couldn't write to `missing_actions.jsonl`:", zap.Error(err))
+		b.logger.Error("Couldn't write to `missing_actions.jsonl`:", zap.Error(err))
 		return
 	}
 	defer fl.Close()
 
 	// TODO: print all actions that are still MISSING to `missing_actions.jsonl`.
-	zlog.Info("Flushing unseen transactions to `missing_actions.jsonl` up until this point.")
-
+	b.logger.Info("Flushing unseen transactions to `missing_actions.jsonl` up until this point.")
 
 	for _, act := range bootSeq {
 		act.SetToServer(true)
@@ -209,8 +210,6 @@ func (b *Boot) flushMissingActions(seenMap map[string]bool, bootSeq []*eos.Actio
 		}
 	}
 }
-
-
 
 type ValidationError struct {
 	Err               error

@@ -11,7 +11,6 @@ func init() {
 	Register("system.resign_accounts", &OpResignAccounts{})
 }
 
-
 type OpResignAccounts struct {
 	Accounts            []eos.AccountName
 	TestnetKeepAccounts bool `json:"TESTNET_KEEP_ACCOUNTS"`
@@ -19,7 +18,7 @@ type OpResignAccounts struct {
 
 func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	if op.TestnetKeepAccounts {
-		zlog.Debug("keeping system accounts around, for testing purposes.")
+		c.Logger.Debug("keeping system accounts around, for testing purposes.")
 		return nil
 	}
 
@@ -33,58 +32,58 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 			continue
 		}
 
-			in <- (*TransactionAction)(system.NewUpdateAuth(acct, PN("active"), PN("owner"), eos.Authority{
-				Threshold: 1,
-				Accounts: []eos.PermissionLevelWeight{
-					eos.PermissionLevelWeight{
-						Permission: eos.PermissionLevel{
-							Actor:      AN("eosio"),
-							Permission: PN("active"),
-						},
-						Weight: 1,
+		in <- (*TransactionAction)(system.NewUpdateAuth(acct, PN("active"), PN("owner"), eos.Authority{
+			Threshold: 1,
+			Accounts: []eos.PermissionLevelWeight{
+				eos.PermissionLevelWeight{
+					Permission: eos.PermissionLevel{
+						Actor:      AN("eosio"),
+						Permission: PN("active"),
 					},
+					Weight: 1,
 				},
-			}, PN("active")))
-			in <- (*TransactionAction)(system.NewUpdateAuth(acct, PN("owner"), PN(""), eos.Authority{
-				Threshold: 1,
-				Accounts: []eos.PermissionLevelWeight{
-					eos.PermissionLevelWeight{
-						Permission: eos.PermissionLevel{
-							Actor:      AN("eosio"),
-							Permission: PN("active"),
-						},
-						Weight: 1,
+			},
+		}, PN("active")))
+		in <- (*TransactionAction)(system.NewUpdateAuth(acct, PN("owner"), PN(""), eos.Authority{
+			Threshold: 1,
+			Accounts: []eos.PermissionLevelWeight{
+				eos.PermissionLevelWeight{
+					Permission: eos.PermissionLevel{
+						Actor:      AN("eosio"),
+						Permission: PN("active"),
 					},
+					Weight: 1,
 				},
-			}, PN("owner")))
+			},
+		}, PN("owner")))
 
 	}
 
 	if eosioPresent {
-			in <- (*TransactionAction)(system.NewUpdateAuth(systemAccount, PN("active"), PN("owner"), eos.Authority{
-				Threshold: 1,
-				Accounts: []eos.PermissionLevelWeight{
-					eos.PermissionLevelWeight{
-						Permission: eos.PermissionLevel{
-							Actor:      prodsAccount,
-							Permission: PN("active"),
-						},
-						Weight: 1,
+		in <- (*TransactionAction)(system.NewUpdateAuth(systemAccount, PN("active"), PN("owner"), eos.Authority{
+			Threshold: 1,
+			Accounts: []eos.PermissionLevelWeight{
+				eos.PermissionLevelWeight{
+					Permission: eos.PermissionLevel{
+						Actor:      prodsAccount,
+						Permission: PN("active"),
 					},
+					Weight: 1,
 				},
-			}, PN("active")))
-			in <- (*TransactionAction)(system.NewUpdateAuth(systemAccount, PN("owner"), PN(""), eos.Authority{
-				Threshold: 1,
-				Accounts: []eos.PermissionLevelWeight{
-					eos.PermissionLevelWeight{
-						Permission: eos.PermissionLevel{
-							Actor:      prodsAccount,
-							Permission: PN("active"),
-						},
-						Weight: 1,
+			},
+		}, PN("active")))
+		in <- (*TransactionAction)(system.NewUpdateAuth(systemAccount, PN("owner"), PN(""), eos.Authority{
+			Threshold: 1,
+			Accounts: []eos.PermissionLevelWeight{
+				eos.PermissionLevelWeight{
+					Permission: eos.PermissionLevel{
+						Actor:      prodsAccount,
+						Permission: PN("active"),
 					},
+					Weight: 1,
 				},
-			}, PN("owner")))
+			},
+		}, PN("owner")))
 	}
 
 	in <- EndTransaction(opPubkey) // end transaction

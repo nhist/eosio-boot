@@ -3,6 +3,10 @@ package boot
 import (
 	"context"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/dfuse-io/eosio-boot/content"
 	"github.com/dfuse-io/eosio-boot/ops"
@@ -11,9 +15,6 @@ import (
 	"github.com/eoscanada/eos-go/ecc"
 	"github.com/eoscanada/eos-go/system"
 	"go.uber.org/zap"
-	"os"
-	"strings"
-	"time"
 )
 
 type option func(b *Boot) *Boot
@@ -38,28 +39,39 @@ func WithKeyBag(keyBag *eos.KeyBag) option {
 	}
 }
 
+func WithLogger(logger *zap.Logger) option {
+	return func(b *Boot) *Boot {
+		b.logger = logger
+		b.contentManager.SetLogger(logger)
+		return b
+	}
+}
+
 type Boot struct {
 	bootSequencePath     string
 	targetNetAPI         *eos.API
 	bootstrappingEnabled bool
 	genesisPath          string
 	bootSequence         *BootSeq
-	contentManager *content.Manager
-	keyBag      *eos.KeyBag
-	bootseqKeys map[string]*ecc.PrivateKey
+	contentManager       *content.Manager
+	keyBag               *eos.KeyBag
+	bootseqKeys          map[string]*ecc.PrivateKey
 	maxActionCountPerTrx int
-	Snapshot           snapshot.Snapshot
-	WriteActions       bool
-	HackVotingAccounts bool
+	Snapshot             snapshot.Snapshot
+	WriteActions         bool
+	HackVotingAccounts   bool
+
+	logger *zap.Logger
 }
 
 func New(bootSequencePath string, targetAPI *eos.API, cachePath string, opts ...option) (b *Boot, err error) {
 	b = &Boot{
-		targetNetAPI:     targetAPI,
-		bootSequencePath: bootSequencePath,
-		contentManager:   content.NewManager(cachePath),
+		targetNetAPI:         targetAPI,
+		bootSequencePath:     bootSequencePath,
+		contentManager:       content.NewManager(cachePath),
 		maxActionCountPerTrx: 500,
-		bootseqKeys:      map[string]*ecc.PrivateKey{},
+		bootseqKeys:          map[string]*ecc.PrivateKey{},
+		logger:               zap.NewNop(),
 	}
 	for _, opt := range opts {
 		b = opt(b)
@@ -87,17 +99,17 @@ func (b *Boot) getBootseqKey(label string) (*ecc.PrivateKey, error) {
 func (b *Boot) Run() (checksums string, err error) {
 	ctx := context.Background()
 
-	zlog.Debug("parsing boot sequence keys")
+	b.logger.Debug("parsing boot sequence keys")
 	if err := b.parseBootseqKeys(); err != nil {
 		return "", err
 	}
 
-	zlog.Debug("downloading references")
+	b.logger.Debug("downloading references")
 	if err := b.contentManager.Download(b.bootSequence.Contents); err != nil {
 		return "", err
 	}
 
-	zlog.Debug("setting boot keys")
+	b.logger.Debug("setting boot keys")
 	if err := b.setKeys(); err != nil {
 		return "", err
 	}
@@ -112,15 +124,14 @@ func (b *Boot) Run() (checksums string, err error) {
 		b.bootSequence.Contents,
 		b.contentManager,
 		b.bootseqKeys,
+		b.targetNetAPI,
 	)
-
-
 
 	trxEventCh := make(chan interface{}, 500)
 	go func() {
 		defer close(trxEventCh)
 		for _, step := range b.bootSequence.BootSequence {
-			zlog.Info("executing bootseq op",
+			b.logger.Info("executing bootseq op",
 				zap.String("label", step.Label),
 				zap.String("op", step.Op),
 				zap.String("signer", step.Signer),
@@ -128,19 +139,18 @@ func (b *Boot) Run() (checksums string, err error) {
 			)
 			pubkey, err := b.getOpPubkey(step)
 			if err != nil {
-				zlog.Error("unable to get public key for operation", zap.Error(err))
+				b.logger.Error("unable to get public key for operation", zap.Error(err))
 				return
 			}
 
-			err = step.Data.Actions(pubkey, opConfig , trxEventCh)
+			err = step.Data.Actions(pubkey, opConfig, trxEventCh)
 			if err != nil {
-				zlog.Error("unable to get actions for step", zap.String("ops", step.Op), zap.Error(err))
+				b.logger.Error("unable to get actions for step", zap.String("ops", step.Op), zap.Error(err))
 				return
 			}
 
 		}
 	}()
-
 
 	index := 0
 	for {
@@ -158,9 +168,9 @@ func (b *Boot) Run() (checksums string, err error) {
 
 		str := []string{}
 		for _, t := range trxBundle.actions {
-			str = append(str, fmt.Sprintf("%s:%s",t.Account, t.Name))
+			str = append(str, fmt.Sprintf("%s:%s", t.Account, t.Name))
 		}
-		zlog.Debug("pushing transaction",
+		b.logger.Debug("pushing transaction",
 			zap.Int("index", index),
 			zap.Int("action_count", len(trxBundle.actions)),
 			zap.String("actions", strings.Join(str, ", ")),
@@ -173,12 +183,12 @@ func (b *Boot) Run() (checksums string, err error) {
 		err := Retry(25, time.Second, func() error {
 			_, err := b.targetNetAPI.SignPushActions(ctx, trxBundle.actions...)
 			if err != nil {
-				zlog.Error("error pushing transaction bundle",
+				b.logger.Error("error pushing transaction bundle",
 					zap.Error(err),
 					zap.Int("index", index),
 				)
 				if traceEnable {
-					trxBundle.debugPrint()
+					trxBundle.debugPrint(b.logger)
 				}
 				return fmt.Errorf("push actions of transaciton bundle: %w", err)
 			}
@@ -186,12 +196,12 @@ func (b *Boot) Run() (checksums string, err error) {
 			return nil
 		})
 		if err != nil {
-			zlog.Error("failed to push transaction bundle", zap.Error(err))
+			b.logger.Error("failed to push transaction bundle", zap.Error(err))
 			return "", err
 		}
 	}
 
-	zlog.Info("waiting 2 seconds for transactions to flush to blocks")
+	b.logger.Info("waiting 2 seconds for transactions to flush to blocks")
 	time.Sleep(2 * time.Second)
 
 	// FIXME: don't do chain validation here..
@@ -200,38 +210,36 @@ func (b *Boot) Run() (checksums string, err error) {
 		return "", fmt.Errorf("chain validation: %s", err)
 	}
 	if !isValid {
-		zlog.Info("WARNING: chain invalid, destroying network if possible")
+		b.logger.Info("WARNING: chain invalid, destroying network if possible")
 		os.Exit(0)
 	}
 
 	return b.bootSequence.Checksum, nil
 }
 
-
 type transactionBundle struct {
 	actions []*eos.Action
-	signer ecc.PublicKey
+	signer  ecc.PublicKey
 }
 
 // helpful for debug puropses
-func (t *transactionBundle) debugPrint() {
+func (t *transactionBundle) debugPrint(logger *zap.Logger) {
 	acts := []string{}
-
-	zlog.Debug("transaction bundle dump start", zap.Int("action_count", len(t.actions)))
+	logger.Debug("transaction bundle dump start", zap.Int("action_count", len(t.actions)))
 	for _, action := range t.actions {
 		actionKey := fmt.Sprintf("%s:%s", action.Account, action.Name)
 		var str string
 		switch actionKey {
-			case "eosio:newaccount":
-				zlog.Debug("action: new account", zap.Reflect("account", (action.ActionData.Data).(system.NewAccount)))
-			case "eosio:setabi":
-				zlog.Debug("action: set abi", zap.Reflect("abi", (action.ActionData.Data).(system.SetABI)))
-			case "eosio:updateauth":
-				zlog.Debug("action: update auth", zap.Reflect("update", (action.ActionData.Data).(system.UpdateAuth)))
+		case "eosio:newaccount":
+			logger.Debug("action: new account", zap.Reflect("account", (action.ActionData.Data).(system.NewAccount)))
+		case "eosio:setabi":
+			logger.Debug("action: set abi", zap.Reflect("abi", (action.ActionData.Data).(system.SetABI)))
+		case "eosio:updateauth":
+			logger.Debug("action: update auth", zap.Reflect("update", (action.ActionData.Data).(system.UpdateAuth)))
 		}
 		acts = append(acts, str)
 	}
-	zlog.Debug("transaction bundle dump end")
+	logger.Debug("transaction bundle dump end")
 
 }
 
@@ -261,8 +269,7 @@ func (b *Boot) chunkifyActionChan(trxEventCh chan interface{}) *transactionBundl
 	return nil
 }
 
-
-func (b *Boot) getOpPubkey(op *ops.OperationType)  (ecc.PublicKey, error){
+func (b *Boot) getOpPubkey(op *ops.OperationType) (ecc.PublicKey, error) {
 	if op.Signer != "" {
 		if privKey, found := b.bootseqKeys[op.Signer]; found {
 			return privKey.PublicKey(), nil
@@ -276,4 +283,3 @@ func (b *Boot) getOpPubkey(op *ops.OperationType)  (ecc.PublicKey, error){
 	}
 	return pubKey, nil
 }
-

@@ -16,6 +16,7 @@ import (
 
 	"github.com/abourget/llerrgroup"
 )
+
 type ContentRef struct {
 	Name string `json:"name"`
 	URL  string `json:"url"`
@@ -24,14 +25,19 @@ type ContentRef struct {
 
 type Manager struct {
 	cachePath string
+	logger    *zap.Logger
 }
 
 func NewManager(cachePath string) *Manager {
 	return &Manager{
 		cachePath: cachePath,
+		logger:    zap.NewNop(),
 	}
 }
 
+func (c *Manager) SetLogger(logger *zap.Logger) {
+	c.logger = logger
+}
 
 func (c *Manager) ensureCacheExists() error {
 	return os.MkdirAll(c.cachePath, 0777)
@@ -45,7 +51,6 @@ func (c *Manager) isInCache(ref string) bool {
 	}
 	return false
 }
-
 
 func (c *Manager) Download(contentRefs []*ContentRef) error {
 	if err := c.ensureCacheExists(); err != nil {
@@ -93,7 +98,7 @@ func (c *Manager) downloadURL(ref string, hash string) error {
 		}
 	}
 
-	zlog.Info("Caching content.", zap.String("ref", ref))
+	c.logger.Info("Caching content.", zap.String("ref", ref))
 	if err := c.writeToCache(ref, cnt); err != nil {
 		return err
 	}
@@ -102,7 +107,7 @@ func (c *Manager) downloadURL(ref string, hash string) error {
 }
 
 func (c *Manager) downloadRef(ref string) ([]byte, error) {
-	zlog.Info("Downloading content", zap.String("from", ref))
+	c.logger.Info("Downloading content", zap.String("from", ref))
 	if _, err := os.Stat(ref); err == nil {
 		return c.downloadLocalFile(ref)
 	}
@@ -162,7 +167,6 @@ func (c *Manager) writeToCache(ref string, content []byte) error {
 	fileName := replaceAllWeirdities(ref)
 	return ioutil.WriteFile(filepath.Join(c.cachePath, fileName), content, 0666)
 }
-
 
 func (c *Manager) ReadFromCache(ref string) ([]byte, error) {
 	fileName := replaceAllWeirdities(ref)

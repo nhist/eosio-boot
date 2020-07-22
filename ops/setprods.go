@@ -47,7 +47,7 @@ func (op *OpSetProds) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in cha
 	for _, key := range prodKeys {
 		producers = append(producers, string(key.ProducerName))
 	}
-	zlog.Info("producers are set", zap.Strings("procuders", producers))
+	c.Logger.Info("producers are set", zap.Strings("procuders", producers))
 
 	in <- (*TransactionAction)(system.NewSetProds(prodKeys))
 	in <- EndTransaction(opPubkey) // end transaction
@@ -58,5 +58,3 @@ type producerKeyString struct {
 	ProducerName          eos.AccountName `json:"producer_name"`
 	BlockSigningKeyString string          `json:"block_signing_key"`
 }
-
-

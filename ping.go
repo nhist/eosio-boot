@@ -7,18 +7,18 @@ import (
 )
 
 func (b *Boot) pingTargetNetwork() {
-	zlog.Info("Pinging target node at ", zap.String("url", b.targetNetAPI.BaseURL))
+	b.logger.Info("Pinging target node at ", zap.String("url", b.targetNetAPI.BaseURL))
 	for {
 		info, err := b.targetNetAPI.GetInfo(context.Background())
 		if err != nil {
-			zlog.Warn("target node", zap.Error(err))
+			b.logger.Warn("target node", zap.Error(err))
 			time.Sleep(1 * time.Second)
 			continue
 		}
 
 		if info.HeadBlockNum < 2 {
-			zlog.Info("target node: still no blocks in")
-			zlog.Info(".")
+			b.logger.Info("target node: still no blocks in")
+			b.logger.Info(".")
 			time.Sleep(1 * time.Second)
 			continue
 		}
@@ -26,5 +26,5 @@ func (b *Boot) pingTargetNetwork() {
 		break
 	}
 
-	zlog.Info(" touchdown!")
+	b.logger.Info(" touchdown!")
 }

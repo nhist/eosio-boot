@@ -12,13 +12,13 @@ import (
 
 func (b *Boot) setKeys() error {
 	if b.keyBag == nil {
-		zlog.Info("key bag not preset")
+		b.logger.Info("key bag not preset")
 		b.keyBag = eos.NewKeyBag()
 	}
 
 	for label, privKey := range b.bootseqKeys {
 		privKeyStr := privKey.String()
-		zlog.Info("adding bootseq key to keybag",
+		b.logger.Info("adding bootseq key to keybag",
 			zap.String("key_tag", label),
 			zap.String("pub_key", privKey.PublicKey().String()),
 			zap.String("priv_key_prefix", privKey.String()[:4]),

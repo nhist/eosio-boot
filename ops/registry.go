@@ -3,13 +3,12 @@ package ops
 import (
 	"encoding/json"
 	"fmt"
+	"reflect"
+
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
-	"go.uber.org/zap"
-	"reflect"
 )
-
 
 type Operation interface {
 	Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error
@@ -23,7 +22,7 @@ type TransactionBoundary struct {
 	Signer ecc.PublicKey
 }
 
-func EndTransaction(signer ecc.PublicKey) TransactionBoundary{
+func EndTransaction(signer ecc.PublicKey) TransactionBoundary {
 	return TransactionBoundary{
 		Signer: signer,
 	}
@@ -31,29 +30,29 @@ func EndTransaction(signer ecc.PublicKey) TransactionBoundary{
 
 func Register(key string, operation Operation) {
 	if key == "" {
-		zlog.Fatal("key cannot be blank")
+		panic(fmt.Sprintf("canont register an ops with  a blank key"))
 	} else if _, ok := operationsRegistry[key]; ok {
-		zlog.Fatal("already registered", zap.String("key", key))
+		panic(fmt.Sprintf("ops already registered: %q", key))
 	}
 	operationsRegistry[key] = operation
 
 }
 
 type OperationType struct {
-	Op     string
-	Signer string
-	Label  string
+	Op       string
+	Signer   string
+	Label    string
 	Validate bool
-	Data   Operation
+	Data     Operation
 }
 
 func (o *OperationType) UnmarshalJSON(data []byte) error {
 	opData := struct {
-		Op     string
-		Signer string
-		Label  string
+		Op                string
+		Signer            string
+		Label             string
 		DisableValidation bool
-		Data   json.RawMessage
+		Data              json.RawMessage
 	}{}
 	if err := json.Unmarshal(data, &opData); err != nil {
 		return err
@@ -80,11 +79,11 @@ func (o *OperationType) UnmarshalJSON(data []byte) error {
 	}
 
 	*o = OperationType{
-		Op:     opData.Op,
-		Label:  opData.Label,
-		Signer: opData.Signer,
+		Op:       opData.Op,
+		Label:    opData.Label,
+		Signer:   opData.Signer,
 		Validate: !opData.DisableValidation,
-		Data:          opIface,
+		Data:     opIface,
 	}
 
 	return nil

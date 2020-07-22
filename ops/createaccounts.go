@@ -2,6 +2,7 @@ package ops
 
 import (
 	"fmt"
+
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/dfuse-io/eosio-boot/snapshot"
 	"github.com/eoscanada/eos-go"
@@ -45,7 +46,7 @@ func (op *OpSnapshotCreateAccounts) Actions(opPubkey ecc.PublicKey, c *config.Op
 	for idx, hodler := range snapshotData {
 		if trunc := op.TestnetTruncateSnapshot; trunc != 0 {
 			if idx == trunc {
-				zlog.Debug("truncated snapshot", zap.Int("at_row", trunc))
+				c.Logger.Debug("truncated snapshot", zap.Int("at_row", trunc))
 				break
 			}
 		}
@@ -70,8 +71,6 @@ func (op *OpSnapshotCreateAccounts) Actions(opPubkey ecc.PublicKey, c *config.Op
 	}
 	return nil
 }
-
-
 
 func splitSnapshotStakes(balance eos.Asset) (cpu, net, xfer eos.Asset) {
 	if balance.Amount < 5000 {

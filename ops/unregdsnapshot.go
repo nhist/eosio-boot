@@ -2,6 +2,7 @@ package ops
 
 import (
 	"fmt"
+
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/dfuse-io/eosio-boot/snapshot"
 	"github.com/dfuse-io/eosio-boot/unregd"
@@ -41,7 +42,7 @@ func (op *OpInjectUnregdSnapshot) Actions(opPubkey ecc.PublicKey, c *config.OpCo
 	for idx, hodler := range snapshotData {
 		if trunc := op.TestnetTruncateSnapshot; trunc != 0 {
 			if idx == trunc {
-				zlog.Debug("- DEBUG: truncated unreg'd snapshot", zap.Int("row", trunc))
+				c.Logger.Debug("- DEBUG: truncated unreg'd snapshot", zap.Int("row", trunc))
 				break
 			}
 		}
