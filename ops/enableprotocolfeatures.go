@@ -18,6 +18,10 @@ func init() {
 type OpEnableProtocolFeature struct {
 }
 
+func (op *OpEnableProtocolFeature) RequireValidation() bool {
+	return false
+}
+
 func (op *OpEnableProtocolFeature) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	ctx := context.Background()
 	preactivateFeature := "PREACTIVATE_FEATURE"

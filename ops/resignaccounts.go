@@ -16,6 +16,10 @@ type OpResignAccounts struct {
 	TestnetKeepAccounts bool `json:"TESTNET_KEEP_ACCOUNTS"`
 }
 
+func (op *OpResignAccounts) RequireValidation() bool {
+	return true
+}
+
 func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	if op.TestnetKeepAccounts {
 		c.Logger.Debug("keeping system accounts around, for testing purposes.")

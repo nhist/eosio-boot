@@ -7,11 +7,9 @@ import (
 	"github.com/eoscanada/eos-go/system"
 )
 
-
 func init() {
 	Register("system.buy_ram", &OpBuyRam{})
 }
-
 
 type OpBuyRam struct {
 	Payer       eos.AccountName
@@ -24,4 +22,8 @@ func (op *OpBuyRam) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan 
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 
+}
+
+func (op *OpBuyRam) RequireValidation() bool {
+	return true
 }

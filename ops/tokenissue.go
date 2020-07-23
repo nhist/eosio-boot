@@ -7,16 +7,18 @@ import (
 	"github.com/eoscanada/eos-go/token"
 )
 
-
 func init() {
 	Register("token.issue", &OpIssueToken{})
 }
-
 
 type OpIssueToken struct {
 	Account eos.AccountName
 	Amount  eos.Asset
 	Memo    string
+}
+
+func (op *OpIssueToken) RequireValidation() bool {
+	return true
 }
 
 func (op *OpIssueToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {

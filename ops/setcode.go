@@ -20,6 +20,10 @@ type OpSetCode struct {
 	ContractNameRef string `json:"contract_name_ref"`
 }
 
+func (op *OpSetCode) RequireValidation() bool {
+	return true
+}
+
 func (op *OpSetCode) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	wasmFileRef, err := c.GetContentsCacheRef(fmt.Sprintf("%s.wasm", op.ContractNameRef))
 	if err != nil {

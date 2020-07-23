@@ -69,10 +69,6 @@ func (c OpConfig) GetProtocolFeature(name string) eos.Checksum256 {
 	name = strings.ToUpper(name)
 	for _, protocolFeature := range c.protocolFeatures {
 		for _, spec := range protocolFeature.Specification {
-			c.Logger.Debug("checking feature",
-				zap.String("name", spec.Name),
-				zap.String("value", spec.Value),
-				zap.String("comp", name),
 			)
 			if spec.Value == name {
 				return protocolFeature.FeatureDigest

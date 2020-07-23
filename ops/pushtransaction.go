@@ -21,6 +21,10 @@ type OpPushTransaction struct {
 	Payload    map[string]interface{}
 }
 
+func (op *OpPushTransaction) RequireValidation() bool {
+	return true
+}
+
 func (op *OpPushTransaction) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	cnt, err := json.Marshal(op.Payload)
 	if err != nil {

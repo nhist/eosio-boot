@@ -25,7 +25,11 @@ func (b *Boot) RunChainValidation(opConfig *config.OpConfig) (bool, error) {
 	go func() {
 		defer close(trxEventCh)
 		for _, step := range b.bootSequence.BootSequence {
-			if !step.Validate {
+			if !step.Data.RequireValidation() {
+				continue
+			}
+
+			if step.SkipValidation {
 				continue
 			}
 

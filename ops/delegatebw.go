@@ -11,7 +11,6 @@ func init() {
 	Register("system.delegate_bw", &OpDelegateBW{})
 }
 
-
 type OpDelegateBW struct {
 	From     eos.AccountName
 	To       eos.AccountName
@@ -24,4 +23,8 @@ func (op *OpDelegateBW) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in c
 	in <- (*TransactionAction)(system.NewDelegateBW(op.From, op.To, eos.NewEOSAsset(op.StakeCPU), eos.NewEOSAsset(op.StakeNet), op.Transfer))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
+}
+
+func (op *OpDelegateBW) RequireValidation() bool {
+	return true
 }

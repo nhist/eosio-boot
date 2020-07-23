@@ -23,3 +23,7 @@ func (op *OpBuyRamBytes) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in 
 	return nil
 
 }
+
+func (op *OpBuyRamBytes) RequireValidation() bool {
+	return true
+}

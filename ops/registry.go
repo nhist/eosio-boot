@@ -12,6 +12,7 @@ import (
 
 type Operation interface {
 	Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error
+	RequireValidation() bool
 }
 
 var operationsRegistry = map[string]Operation{}
@@ -39,20 +40,20 @@ func Register(key string, operation Operation) {
 }
 
 type OperationType struct {
-	Op       string
-	Signer   string
-	Label    string
-	Validate bool
-	Data     Operation
+	Op             string
+	Signer         string
+	Label          string
+	SkipValidation bool
+	Data           Operation
 }
 
 func (o *OperationType) UnmarshalJSON(data []byte) error {
 	opData := struct {
-		Op                string
-		Signer            string
-		Label             string
-		DisableValidation bool
-		Data              json.RawMessage
+		Op             string
+		Signer         string
+		Label          string
+		SkipValidation bool
+		Data           json.RawMessage
 	}{}
 	if err := json.Unmarshal(data, &opData); err != nil {
 		return err
@@ -79,11 +80,11 @@ func (o *OperationType) UnmarshalJSON(data []byte) error {
 	}
 
 	*o = OperationType{
-		Op:       opData.Op,
-		Label:    opData.Label,
-		Signer:   opData.Signer,
-		Validate: !opData.DisableValidation,
-		Data:     opIface,
+		Op:             opData.Op,
+		Label:          opData.Label,
+		Signer:         opData.Signer,
+		SkipValidation: opData.SkipValidation,
+		Data:           opIface,
 	}
 
 	return nil

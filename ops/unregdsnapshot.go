@@ -19,6 +19,10 @@ type OpInjectUnregdSnapshot struct {
 	TestnetTruncateSnapshot int `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
+func (op *OpInjectUnregdSnapshot) RequireValidation() bool {
+	return true
+}
+
 func (op *OpInjectUnregdSnapshot) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	snapshotFile, err := c.GetContentsCacheRef("snapshot_unregistered.csv")
 	if err != nil {

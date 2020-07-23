@@ -21,6 +21,10 @@ type OpSnapshotCreateAccounts struct {
 	TestnetTruncateSnapshot int    `json:"TESTNET_TRUNCATE_SNAPSHOT"`
 }
 
+func (op *OpSnapshotCreateAccounts) RequireValidation() bool {
+	return true
+}
+
 func (op *OpSnapshotCreateAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	snapshotFile, err := c.GetContentsCacheRef("snapshot.csv")
 	if err != nil {

@@ -16,6 +16,10 @@ type OpSetProds struct {
 	Prods []producerKeyString
 }
 
+func (op *OpSetProds) RequireValidation() bool {
+	return true
+}
+
 func (op *OpSetProds) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
 	var prodKeys []system.ProducerKey
 

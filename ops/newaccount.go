@@ -11,12 +11,15 @@ func init() {
 	Register("system.newaccount", &OpNewAccount{})
 }
 
-
 type OpNewAccount struct {
 	Creator    eos.AccountName
 	NewAccount eos.AccountName `json:"new_account"`
 	Pubkey     string
 	RamBytes   uint32 `json:"ram_bytes"`
+}
+
+func (op *OpNewAccount) RequireValidation() bool {
+	return true
 }
 
 func (op *OpNewAccount) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {

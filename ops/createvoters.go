@@ -3,6 +3,7 @@ package ops
 import (
 	"bytes"
 	"fmt"
+
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
 	"github.com/eoscanada/eos-go/ecc"
@@ -14,11 +15,14 @@ func init() {
 	Register("system.create_voters", &OpCreateVoters{})
 }
 
-
 type OpCreateVoters struct {
 	Creator eos.AccountName
 	Pubkey  string
 	Count   int
+}
+
+func (op *OpCreateVoters) RequireValidation() bool {
+	return true
 }
 
 func (op *OpCreateVoters) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {
@@ -39,8 +43,6 @@ func (op *OpCreateVoters) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
 }
-
-
 
 const charset = "abcdefghijklmnopqrstuvwxyz"
 

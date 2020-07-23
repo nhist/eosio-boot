@@ -11,7 +11,6 @@ func init() {
 	Register("token.create", &OpCreateToken{})
 }
 
-
 type OpCreateToken struct {
 	Account eos.AccountName `json:"account"`
 	Amount  eos.Asset       `json:"amount"`
@@ -21,4 +20,8 @@ func (op *OpCreateToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in 
 	in <- (*TransactionAction)(token.NewCreate(op.Account, op.Amount))
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil
+}
+
+func (op *OpCreateToken) RequireValidation() bool {
+	return true
 }

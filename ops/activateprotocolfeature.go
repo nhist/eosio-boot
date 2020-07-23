@@ -20,6 +20,10 @@ type ActivateProtocolFeatures struct {
 	Features []string
 }
 
+func (op *ActivateProtocolFeatures) RequireValidation() bool {
+	return false
+}
+
 func (op *ActivateProtocolFeatures) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) (err error) {
 	actions := []*eos.Action{}
 

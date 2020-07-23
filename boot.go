@@ -123,10 +123,6 @@ func (b *Boot) Run() (checksums string, err error) {
 		return "", fmt.Errorf("unable to get producer protocol features: %w", err)
 	}
 
-	b.logger.Debug("support network protocol features",
-		zap.Reflect("feature_protocols", features),
-	)
-
 	b.pingTargetNetwork()
 
 	opConfig := config.NewOpConfig(
@@ -146,7 +142,7 @@ func (b *Boot) Run() (checksums string, err error) {
 				zap.String("label", step.Label),
 				zap.String("op", step.Op),
 				zap.String("signer", step.Signer),
-				zap.Bool("validate", step.Validate),
+				zap.Bool("skip_validation", step.SkipValidation),
 			)
 			pubkey, err := b.getOpPubkey(step)
 			if err != nil {
