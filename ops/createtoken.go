@@ -12,8 +12,10 @@ func init() {
 }
 
 type OpCreateToken struct {
+	// TODO: this should have be Issuer
 	Account eos.AccountName `json:"account"`
-	Amount  eos.Asset       `json:"amount"`
+	// TODO: this should be MaximumSupply
+	Amount eos.Asset `json:"amount"`
 }
 
 func (op *OpCreateToken) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in chan interface{}) error {

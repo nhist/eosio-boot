@@ -239,16 +239,34 @@ func (t *transactionBundle) debugPrint(logger *zap.Logger) {
 		var str string
 		switch actionKey {
 		case "eosio:newaccount":
-			logger.Debug("action: new account", zap.Reflect("account", (action.ActionData.Data).(system.NewAccount)))
+			logger.Debug("action: new account",
+				zap.Reflect("account", (action.ActionData.Data).(system.NewAccount)),
+			)
 		case "eosio:setabi":
-
+			setABIAction := (action.ActionData.Data).(system.SetABI)
 			h := sha256.New()
-			h.Write([]byte("hello world\n"))
-			fmt.Printf("%x", h.Sum(nil))
-
-			logger.Debug("action: set abi", zap.Reflect("abi", (action.ActionData.Data).(system.SetABI)))
+			h.Write(setABIAction.ABI)
+			logger.Debug("action: set abi",
+				zap.String("account", string(setABIAction.Account)),
+				zap.ByteString("abi_sha256", h.Sum(nil)),
+			)
+		case "eosio:setcode":
+			setCodeAction := (action.ActionData.Data).(system.SetCode)
+			h := sha256.New()
+			h.Write(setCodeAction.Code)
+			logger.Debug("action: set code",
+				zap.String("account", string(setCodeAction.Account)),
+				zap.ByteString("code_sha256", h.Sum(nil)),
+			)
 		case "eosio:updateauth":
 			logger.Debug("action: update auth", zap.Reflect("update", (action.ActionData.Data).(system.UpdateAuth)))
+		case "eosio:init":
+			initAction := (action.ActionData.Data).(system.Init)
+			logger.Debug("action: eosio init",
+				zap.Uint32("version", uint32(initAction.Version)),
+				zap.String("core", initAction.Core.String()),
+			)
+
 		}
 		acts = append(acts, str)
 	}

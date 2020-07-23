@@ -11,6 +11,12 @@ github.com/eoscanada/eos-go v0.9.1-0.20200722183951-2b67efeb7cbd h1:a/JLqJiYI7Ch
 github.com/eoscanada/eos-go v0.9.1-0.20200722183951-2b67efeb7cbd/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
 github.com/eoscanada/eos-go v0.9.1-0.20200723124523-15b8a308e4ad h1:zTFavzVF0ahwvBlDvqZ17ysy6W23DuzQy2mCIvaKEds=
 github.com/eoscanada/eos-go v0.9.1-0.20200723124523-15b8a308e4ad/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
+github.com/eoscanada/eos-go v0.9.1-0.20200723164750-1d323b9dd334 h1:AT/5qO+XmV6xvfIoKtRI5hrIWTFwkMLOgbvOsL2uXdc=
+github.com/eoscanada/eos-go v0.9.1-0.20200723164750-1d323b9dd334/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
+github.com/eoscanada/eos-go v0.9.1-0.20200723165729-425501625494 h1:DPgf2xiDYMJMG0qHbNJhV3GCz5UZ1bQKOVI/rkYNJ68=
+github.com/eoscanada/eos-go v0.9.1-0.20200723165729-425501625494/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
+github.com/eoscanada/eos-go v0.9.1-0.20200723180508-f68c7571db82 h1:MHETOtdFMe0mLAq95Ftw5Cqa7pXQu8f15J9rMNKyiFs=
+github.com/eoscanada/eos-go v0.9.1-0.20200723180508-f68c7571db82/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=

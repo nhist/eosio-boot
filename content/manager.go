@@ -119,7 +119,7 @@ func (c *Manager) downloadRef(ref string) ([]byte, error) {
 
 	switch destURL.Scheme {
 	case "file":
-		return c.downloadFileURL(destURL)
+		return c.downloadLocalFile(destURL.Path)
 	case "http", "https":
 		return c.downloadHTTPURL(destURL)
 	default:
@@ -129,11 +129,6 @@ func (c *Manager) downloadRef(ref string) ([]byte, error) {
 
 func (c *Manager) downloadLocalFile(ref string) ([]byte, error) {
 	return ioutil.ReadFile(ref)
-}
-
-func (c *Manager) downloadFileURL(destURL *url.URL) ([]byte, error) {
-	fmt.Printf("Path %s, Raw path: %s\n", destURL.Path, destURL.RawPath)
-	return []byte{}, nil
 }
 
 func (c *Manager) downloadHTTPURL(destURL *url.URL) ([]byte, error) {
