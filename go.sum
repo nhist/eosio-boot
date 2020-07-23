@@ -9,6 +9,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/eoscanada/eos-go v0.9.1-0.20200722183951-2b67efeb7cbd h1:a/JLqJiYI7ChcvAcuZTGP08P+nqAUxSnPkU3pDcRPTE=
 github.com/eoscanada/eos-go v0.9.1-0.20200722183951-2b67efeb7cbd/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
+github.com/eoscanada/eos-go v0.9.1-0.20200723124523-15b8a308e4ad h1:zTFavzVF0ahwvBlDvqZ17ysy6W23DuzQy2mCIvaKEds=
+github.com/eoscanada/eos-go v0.9.1-0.20200723124523-15b8a308e4ad/go.mod h1:exxz2Fyjqx23FIYF1QlhhhggYZxcbZMGp2H/4h7I34Y=
 github.com/google/renameio v0.1.0/go.mod h1:KWCgfxg9yswjAJkECMjeO8J8rahYeXnNhOm40UhjYkI=
 github.com/kisielk/gotool v1.0.0/go.mod h1:XhKaO+MFFWcvkIS/tQcRk01m1F5IRFswLeQ+oQHNcck=
 github.com/kr/pretty v0.1.0 h1:L/CwN0zerZDmRFUapSPitk6f+Q3+0za1rQkzVuMiMFI=

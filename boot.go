@@ -101,22 +101,31 @@ func (b *Boot) Run() (checksums string, err error) {
 
 	b.logger.Debug("parsing boot sequence keys")
 	if err := b.parseBootseqKeys(); err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to parse boot sequence: %w", err)
 	}
 
 	b.logger.Debug("downloading references")
 	if err := b.contentManager.Download(b.bootSequence.Contents); err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to download content references: %w", err)
 	}
 
 	b.logger.Debug("setting boot keys")
 	if err := b.setKeys(); err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to set boot keys: %w", err)
 	}
 
 	if err := b.attachKeysOnTargetNode(ctx); err != nil {
-		return "", err
+		return "", fmt.Errorf("unable to attach keys on target node: %w", err)
 	}
+
+	features, err := b.getProducerProtocolFeatures(ctx)
+	if err != nil {
+		return "", fmt.Errorf("unable to get producer protocol features: %w", err)
+	}
+
+	b.logger.Debug("support network protocol features",
+		zap.Reflect("feature_protocols", features),
+	)
 
 	b.pingTargetNetwork()
 
@@ -125,6 +134,8 @@ func (b *Boot) Run() (checksums string, err error) {
 		b.contentManager,
 		b.bootseqKeys,
 		b.targetNetAPI,
+		features,
+		b.logger,
 	)
 
 	trxEventCh := make(chan interface{}, 500)

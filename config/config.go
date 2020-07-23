@@ -3,6 +3,7 @@ package config
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/dfuse-io/eosio-boot/content"
 	"github.com/eoscanada/eos-go"
@@ -43,21 +44,42 @@ func (a *abiCache) GetABI(accountName eos.AccountName) (*eos.ABI, error) {
 }
 
 type OpConfig struct {
-	contentRefs    []*content.ContentRef
-	privateKeys    map[string]*ecc.PrivateKey
-	contentManager *content.Manager
-	AbiCache       *abiCache
-	Logger         *zap.Logger
+	contentRefs      []*content.ContentRef
+	privateKeys      map[string]*ecc.PrivateKey
+	contentManager   *content.Manager
+	protocolFeatures []eos.ProtocolFeature
+	API              *eos.API
+	AbiCache         *abiCache
+	Logger           *zap.Logger
 }
 
-func NewOpConfig(contentRefs []*content.ContentRef, contentManager *content.Manager, privateKeys map[string]*ecc.PrivateKey, api *eos.API) *OpConfig {
+func NewOpConfig(contentRefs []*content.ContentRef, contentManager *content.Manager, privateKeys map[string]*ecc.PrivateKey, api *eos.API, protocolFeatures []eos.ProtocolFeature, logger *zap.Logger) *OpConfig {
 	return &OpConfig{
-		contentRefs:    contentRefs,
-		privateKeys:    privateKeys,
-		contentManager: contentManager,
-		AbiCache:       newAbiCache(api),
-		Logger:         zap.NewNop(),
+		contentRefs:      contentRefs,
+		privateKeys:      privateKeys,
+		contentManager:   contentManager,
+		protocolFeatures: protocolFeatures,
+		API:              api,
+		AbiCache:         newAbiCache(api),
+		Logger:           logger,
 	}
+}
+
+func (c OpConfig) GetProtocolFeature(name string) eos.Checksum256 {
+	name = strings.ToUpper(name)
+	for _, protocolFeature := range c.protocolFeatures {
+		for _, spec := range protocolFeature.Specification {
+			c.Logger.Debug("checking feature",
+				zap.String("name", spec.Name),
+				zap.String("value", spec.Value),
+				zap.String("comp", name),
+			)
+			if spec.Value == name {
+				return protocolFeature.FeatureDigest
+			}
+		}
+	}
+	return nil
 }
 
 func (c OpConfig) HackVotingAccounts() bool {
