@@ -107,7 +107,7 @@ func (c *Manager) downloadURL(ref string, hash string) error {
 }
 
 func (c *Manager) downloadRef(ref string) ([]byte, error) {
-	c.logger.Info("Downloading content", zap.String("from", ref))
+	c.logger.Debug("Downloading content", zap.String("from", ref))
 	if _, err := os.Stat(ref); err == nil {
 		return c.downloadLocalFile(ref)
 	}

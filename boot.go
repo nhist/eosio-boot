@@ -2,6 +2,7 @@ package boot
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"os"
 	"strings"
@@ -240,6 +241,11 @@ func (t *transactionBundle) debugPrint(logger *zap.Logger) {
 		case "eosio:newaccount":
 			logger.Debug("action: new account", zap.Reflect("account", (action.ActionData.Data).(system.NewAccount)))
 		case "eosio:setabi":
+
+			h := sha256.New()
+			h.Write([]byte("hello world\n"))
+			fmt.Printf("%x", h.Sum(nil))
+
 			logger.Debug("action: set abi", zap.Reflect("abi", (action.ActionData.Data).(system.SetABI)))
 		case "eosio:updateauth":
 			logger.Debug("action: update auth", zap.Reflect("update", (action.ActionData.Data).(system.UpdateAuth)))
