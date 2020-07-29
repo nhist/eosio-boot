@@ -258,8 +258,12 @@ func (t *transactionBundle) debugPrint(logger *zap.Logger) {
 				zap.String("account", string(setCodeAction.Account)),
 				zap.ByteString("code_sha256", h.Sum(nil)),
 			)
+		case "eosio:linkauth":
+			logger.Debug("action: link auth code",
+				zap.Reflect("link_auth", (action.ActionData.Data).(system.LinkAuth)),
+			)
 		case "eosio:updateauth":
-			logger.Debug("action: update auth", zap.Reflect("update", (action.ActionData.Data).(system.UpdateAuth)))
+			logger.Debug("action: update auth", zap.Reflect("update_auth", (action.ActionData.Data).(system.UpdateAuth)))
 		case "eosio:init":
 			initAction := (action.ActionData.Data).(system.Init)
 			logger.Debug("action: eosio init",
