@@ -1,7 +1,9 @@
 package ops
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 
 	"github.com/dfuse-io/eosio-boot/config"
 	"github.com/eoscanada/eos-go"
@@ -38,4 +40,21 @@ func getBootKey(c *config.OpConfig) (ecc.PublicKey, error) {
 	}
 
 	return ecc.PublicKey{}, fmt.Errorf("cannot find boot/ephemeral key")
+}
+
+func retrieveABIfromRef(abiPath string) (*eos.ABI, error) {
+	abiContent, err := ioutil.ReadFile(abiPath)
+	if err != nil {
+		return nil, err
+	}
+	if len(abiContent) == 0 {
+		return nil, fmt.Errorf("unable to unmarshal abi with 0 bytes")
+	}
+
+	var abiDef eos.ABI
+	if err := json.Unmarshal(abiContent, &abiDef); err != nil {
+		return nil, fmt.Errorf("unmarshal ABI file: %s", err)
+	}
+
+	return &abiDef, nil
 }
