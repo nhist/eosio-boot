@@ -88,7 +88,7 @@ func (b *Boot) validateTargetNetwork(bootSeqMap ActionMap, bootSeq []*eos.Action
 	expectedActionCount := len(bootSeq)
 	validationErrors := make([]error, 0)
 
-	b.pingTargetNetwork()
+	b.waitTargetNodeToBeUp()
 
 	// TODO: wait for target network to be up, and responding...
 	b.logger.Info("Pulling blocks from chain until we gathered all actions to validate:")

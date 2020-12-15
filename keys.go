@@ -17,14 +17,13 @@ func (b *Boot) setKeys() error {
 	}
 
 	for label, privKey := range b.bootseqKeys {
-		privKeyStr := privKey.String()
 		b.logger.Info("adding bootseq key to keybag",
 			zap.String("key_tag", label),
 			zap.String("pub_key", privKey.PublicKey().String()),
-			zap.String("priv_key_prefix", privKey.String()[:4]),
-			zap.String("priv_key", privKey.String()[len(privKey.String())-4:]),
+			zap.Stringer("priv_key", privKey),
 		)
-		b.keyBag.Add(privKeyStr)
+
+		b.keyBag.Append(privKey)
 	}
 
 	return nil
@@ -46,7 +45,6 @@ func (b *Boot) parseBootseqKeys() error {
 	}
 	return nil
 }
-
 
 func (b *Boot) getBootKey() (ecc.PublicKey, error) {
 	privKey, err := b.getBootseqKey("boot")

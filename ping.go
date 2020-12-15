@@ -2,11 +2,12 @@ package boot
 
 import (
 	"context"
-	"go.uber.org/zap"
 	"time"
+
+	"go.uber.org/zap"
 )
 
-func (b *Boot) pingTargetNetwork() {
+func (b *Boot) waitTargetNodeToBeUp() {
 	b.logger.Info("Pinging target node at ", zap.String("url", b.targetNetAPI.BaseURL))
 	for {
 		info, err := b.targetNetAPI.GetInfo(context.Background())
@@ -25,6 +26,4 @@ func (b *Boot) pingTargetNetwork() {
 
 		break
 	}
-
-	b.logger.Info(" touchdown!")
 }

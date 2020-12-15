@@ -18,7 +18,15 @@ import (
 	"go.uber.org/zap"
 )
 
-type option func(b *Boot) *Boot
+type Option interface {
+	apply(b *Boot)
+}
+
+type funcOption func(b *Boot)
+
+func (f funcOption) apply(b *Boot) {
+	f(b)
+}
 
 var traceEnable = false
 
@@ -26,29 +34,34 @@ func init() {
 	traceEnable = os.Getenv("TRACE") == "true"
 }
 
-func WithMaxActionCountPerTrx(max int) option {
-	return func(b *Boot) *Boot {
+func WithMaxActionCountPerTrx(max int) Option {
+	return funcOption(func(b *Boot) {
 		b.maxActionCountPerTrx = max
-		return b
-	}
+	})
 }
 
-func WithKeyBag(keyBag *eos.KeyBag) option {
-	return func(b *Boot) *Boot {
+func WithKeyBag(keyBag *eos.KeyBag) Option {
+	return funcOption(func(b *Boot) {
 		b.keyBag = keyBag
-		return b
-	}
+	})
 }
 
-func WithLogger(logger *zap.Logger) option {
-	return func(b *Boot) *Boot {
+func WithLogger(logger *zap.Logger) Option {
+	return funcOption(func(b *Boot) {
 		b.logger = logger
 		b.contentManager.SetLogger(logger)
-		return b
-	}
+	})
+}
+
+func WithHackVotingActions() Option {
+	return funcOption(func(b *Boot) {
+		b.hackVotingAccounts = true
+	})
 }
 
 type Boot struct {
+	Snapshot snapshot.Snapshot
+
 	bootSequencePath     string
 	targetNetAPI         *eos.API
 	bootstrappingEnabled bool
@@ -58,14 +71,12 @@ type Boot struct {
 	keyBag               *eos.KeyBag
 	bootseqKeys          map[string]*ecc.PrivateKey
 	maxActionCountPerTrx int
-	Snapshot             snapshot.Snapshot
-	WriteActions         bool
-	HackVotingAccounts   bool
+	hackVotingAccounts   bool
 
 	logger *zap.Logger
 }
 
-func New(bootSequencePath string, targetAPI *eos.API, cachePath string, opts ...option) (b *Boot, err error) {
+func New(bootSequencePath string, targetAPI *eos.API, cachePath string, opts ...Option) (b *Boot, err error) {
 	b = &Boot{
 		targetNetAPI:         targetAPI,
 		bootSequencePath:     bootSequencePath,
@@ -75,7 +86,7 @@ func New(bootSequencePath string, targetAPI *eos.API, cachePath string, opts ...
 		logger:               zap.NewNop(),
 	}
 	for _, opt := range opts {
-		b = opt(b)
+		opt.apply(b)
 	}
 
 	b.bootSequence, err = readBootSeq(b.bootSequencePath)
@@ -119,12 +130,13 @@ func (b *Boot) Run() (checksums string, err error) {
 		return "", fmt.Errorf("unable to attach keys on target node: %w", err)
 	}
 
-	features, err := b.getProducerProtocolFeatures(ctx)
+	// We need to wait for target node to be up prior calling the get producer protocol features below
+	b.waitTargetNodeToBeUp()
+
+	features, err := b.targetNetAPI.GetProducerProtocolFeatures(ctx)
 	if err != nil {
 		return "", fmt.Errorf("unable to get producer protocol features: %w", err)
 	}
-
-	b.pingTargetNetwork()
 
 	opConfig := config.NewOpConfig(
 		b.bootSequence.Contents,
@@ -301,7 +313,6 @@ func (b *Boot) chunkifyActionChan(trxEventCh chan interface{}) *transactionBundl
 			panic(fmt.Sprintf("chunkify: unexpected type in action chan"))
 		}
 	}
-	return nil
 }
 
 func (b *Boot) getOpPubkey(op *ops.OperationType) (ecc.PublicKey, error) {
