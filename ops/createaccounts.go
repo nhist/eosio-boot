@@ -63,14 +63,14 @@ func (op *OpSnapshotCreateAccounts) Actions(opPubkey ecc.PublicKey, c *config.Op
 
 		cpuStake, netStake, rest := splitSnapshotStakes(hodler.Balance)
 
-		in <- system.NewNewAccount(AN("eosio"), destAccount, destPubKey)
+		in <- system.NewNewAccount(AN("zswhq"), destAccount, destPubKey)
 		// special case `transfer` for `b1` ?
-		in <- (*TransactionAction)(system.NewDelegateBW(AN("eosio"), destAccount, cpuStake, netStake, true))
-		in <- (*TransactionAction)(system.NewBuyRAMBytes(AN("eosio"), destAccount, uint32(op.BuyRAMBytes)))
+		in <- (*TransactionAction)(system.NewDelegateBW(AN("zswhq"), destAccount, cpuStake, netStake, true))
+		in <- (*TransactionAction)(system.NewBuyRAMBytes(AN("zswhq"), destAccount, uint32(op.BuyRAMBytes)))
 		in <- EndTransaction(opPubkey) // end transaction
 
 		memo := "Welcome " + hodler.EthereumAddress[len(hodler.EthereumAddress)-6:]
-		in <- (*TransactionAction)(token.NewTransfer(AN("eosio"), destAccount, rest, memo))
+		in <- (*TransactionAction)(token.NewTransfer(AN("zswhq"), destAccount, rest, memo))
 		in <- EndTransaction(opPubkey) // end transaction
 	}
 	return nil

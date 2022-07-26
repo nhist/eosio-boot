@@ -37,8 +37,8 @@ func (op *OpCreateVoters) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in
 
 		in <- (*TransactionAction)(system.NewNewAccount(op.Creator, voterName, pubKey))
 		in <- (*TransactionAction)(token.NewTransfer(op.Creator, voterName, eos.NewEOSAsset(1000000000), ""))
-		in <- (*TransactionAction)(system.NewBuyRAMBytes(AN("eosio"), voterName, 8192)) // 8kb gift !
-		in <- (*TransactionAction)(system.NewDelegateBW(AN("eosio"), voterName, eos.NewEOSAsset(10000), eos.NewEOSAsset(10000), true))
+		in <- (*TransactionAction)(system.NewBuyRAMBytes(AN("zswhq"), voterName, 8192)) // 8kb gift !
+		in <- (*TransactionAction)(system.NewDelegateBW(AN("zswhq"), voterName, eos.NewEOSAsset(10000), eos.NewEOSAsset(10000), true))
 	}
 	in <- EndTransaction(opPubkey) // end transaction
 	return nil

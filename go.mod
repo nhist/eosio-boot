@@ -10,3 +10,5 @@ require (
 	go.uber.org/zap v1.15.0
 	gopkg.in/olivere/elastic.v3 v3.0.75
 )
+
+replace github.com/eoscanada/eos-go => github.com/nhist/zswchain-go v3.0.0

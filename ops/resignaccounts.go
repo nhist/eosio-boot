@@ -26,7 +26,7 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 		return nil
 	}
 
-	systemAccount := AN("eosio")
+	systemAccount := AN("zswhq")
 	prodsAccount := AN("eosio.prods") // this is a special system account that is granted by 2/3 + 1 of the current BP schedule.
 
 	eosioPresent := false
@@ -41,7 +41,7 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 			Accounts: []eos.PermissionLevelWeight{
 				eos.PermissionLevelWeight{
 					Permission: eos.PermissionLevel{
-						Actor:      AN("eosio"),
+						Actor:      AN("zswhq"),
 						Permission: PN("active"),
 					},
 					Weight: 1,
@@ -53,7 +53,7 @@ func (op *OpResignAccounts) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, 
 			Accounts: []eos.PermissionLevelWeight{
 				eos.PermissionLevelWeight{
 					Permission: eos.PermissionLevel{
-						Actor:      AN("eosio"),
+						Actor:      AN("zswhq"),
 						Permission: PN("active"),
 					},
 					Weight: 1,

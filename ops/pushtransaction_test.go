@@ -23,7 +23,7 @@ func Test_encodePayload(t *testing.T) {
 		{
 			name:        "sunny path",
 			payload:     "{\"from\" : \"eosio\", \"to\" : \"eosio3\", \"quantity\": \"10 EOS\", \"memo\": \"custom trx\"}",
-			expectData:  map[string]interface{}{"from": "eosio", "memo": "custom trx", "quantity": "10 EOS", "to": "eosio3"},
+			expectData:  map[string]interface{}{"from": "zswhq", "memo": "custom trx", "quantity": "10 EOS", "to": "eosio3"},
 			expectError: false,
 		},
 		{

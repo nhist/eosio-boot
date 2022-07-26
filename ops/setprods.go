@@ -42,7 +42,7 @@ func (op *OpSetProds) Actions(opPubkey ecc.PublicKey, c *config.OpConfig, in cha
 
 	if len(prodKeys) == 0 {
 		prodKeys = []system.ProducerKey{system.ProducerKey{
-			ProducerName:    AN("eosio"),
+			ProducerName:    AN("zswhq"),
 			BlockSigningKey: pubKey,
 		}}
 	}
